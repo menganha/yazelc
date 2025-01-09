@@ -3,9 +3,6 @@ from typing import TypeVar, Optional, Union, Type
 
 import esper
 
-from yazelc.event.event_queue import EventQueue
-from yazelc.resource_manager import ResourceManager
-
 C = TypeVar('C')
 C_alt = TypeVar('C_alt')  # alternative component
 
@@ -15,11 +12,6 @@ class World(esper.World):
     Adds resource management and event queue reference to be used by systems.
     Additional helpful methods are included
     """
-
-    def __init__(self, resource_manager: ResourceManager, event_queue: EventQueue):
-        super().__init__()
-        self.resource_manager = resource_manager
-        self.event_queue = event_queue
 
     def try_pair_signature(self, ent_1: int, ent_2: int, component_type_1: Type[C], component_type_2: Type[C_alt]) \
             -> Union[tuple[int, C, int, C_alt], tuple[int, C_alt, int, C], None]:

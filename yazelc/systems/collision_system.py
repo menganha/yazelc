@@ -1,5 +1,5 @@
 from yazelc import zesper
-from yazelc.components import Position, Velocity, HitBox, InteractorTag, Dialog, Weapon, Health, Collectable, Door
+from yazelc.components import Position, Velocity, HitBox, InteractorTag, Sign, Weapon, Health, Collectable, Door
 from yazelc.event.events import CollisionEvent, DamageEvent, CollectionEvent, HitDoorEvent, DialogTriggerEvent
 from yazelc.player.player import VELOCITY
 
@@ -44,7 +44,9 @@ class CollisionSystem(zesper.Processor):
     def on_collision(self, collision_event: CollisionEvent):
 
         # Handles collision when interacting with entities with the Dialog component
-        if components := self.world.try_pair_signature(collision_event.ent_1, collision_event.ent_2, InteractorTag, Dialog):
+        if components := self.world.try_pair_signature(collision_event.ent_1, collision_event.ent_2, InteractorTag,
+                                                       Sign
+                                                       ):
             _, _, dialog_entity_id, _ = components
             dialog_trigger_event = DialogTriggerEvent(dialog_entity_id)
             self.world.event_queue.add(dialog_trigger_event)

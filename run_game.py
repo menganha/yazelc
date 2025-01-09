@@ -9,8 +9,7 @@ pygame.init()
 from yazelc.gamepad import Gamepad
 from yazelc.keyboard import Keyboard
 
-
-from yazelc import config as cfg
+from yazelc.config import Config
 from scenes import scene_manager
 from yazelc.scenes.gameplay_scene import GameplayScene
 from yazelc.scenes.intro_scene import IntroScene
@@ -23,8 +22,8 @@ INITIAL_POS = IVec(10, 24)
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d [%(levelname)s]: %(message)s',
                         datefmt='%I:%M:%S')
-
-    window = pygame.display.set_mode((cfg.RESOLUTION.x, cfg.RESOLUTION.y), pygame.SCALED, vsync=1)
+    configuration = Config.load_from_json('yazelc/settings.json')
+    window = pygame.display.set_mode(configuration.window.resolution, pygame.SCALED, vsync=1)
 
     pygame.joystick.init()
     if pygame.joystick.get_count():

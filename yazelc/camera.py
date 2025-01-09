@@ -9,7 +9,7 @@ from yazelc.components import Position, Renderable
 class Camera:
     """ Max dimensions refer where to the bound where the camera should not go beyond """
 
-    def __init__(self, x_pos: int, y_pos: int, max_x: int = cfg.RESOLUTION.x, max_y: int = cfg.RESOLUTION.y):
+    def __init__(self, x_pos: int, y_pos: int, max_x: int = 100, max_y: int = 100):
         self.pos = Position(x_pos, y_pos)
         self.max_pos = Position(max_x, max_y)
         self.offset = Position(max_x, max_y)

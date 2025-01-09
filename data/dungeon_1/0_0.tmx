@@ -40,7 +40,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="5" name="foreground" width="17" height="15" visible="0">
+ <layer id="5" name="foreground" width="17" height="15">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -59,8 +59,8 @@
 0,0,0,0,0,0,0,2052,2052,2052,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="4" name="doors" tintcolor="#74b383">
-  <object id="137" x="128" y="224" width="16" height="4">
+ <objectgroup id="4" name="interactive" tintcolor="#74b383">
+  <object id="137" x="128" y="220" width="16" height="4">
    <properties>
     <property name="target_door" value="overworld:overworld_1.tmx"/>
     <property name="target_x" type="int" value="3"/>

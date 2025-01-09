@@ -4,7 +4,6 @@ from enum import Enum, auto
 
 import pygame
 
-from yazelc.config import RESOLUTION
 from yazelc.font import Font
 from yazelc.items import CollectableItemType
 from yazelc.tween import TweenFunction
@@ -37,9 +36,9 @@ class Position(pygame.Vector2):
         super().update(x, y)
 
     @classmethod
-    def on_screen_center(cls, surface: pygame.Surface, absolute: bool = False):
+    def on_screen_center(cls, surface: pygame.Surface, width: int, height: int, absolute: bool = False):
         """ Returns the Position to which the surface is centered on the screen"""
-        return cls((RESOLUTION.x - surface.get_width()) // 2, (RESOLUTION.y - surface.get_height()) // 2, absolute)
+        return cls((width - surface.get_width()) // 2, (height - surface.get_height()) // 2, absolute)
 
     @classmethod
     def from_direction(cls, direction: Direction, length: float, absolute: bool = False):
@@ -59,15 +58,23 @@ class Acceleration(Velocity): pass
 
 
 @component
-class Dialog:
+class Sign:
     """ Used for dialogs or signs in game """
     text: str
-    font: Font
+    # font: Font
+
+
+@component()
+class TextBox:
+    """
+    Text boxes used for dialog
+    """
+    text: str
     index: int = 0  # Index of the char at which the rendered text is actually in
     index_start: int = 0
     x_pos: int = 0
     y_pos: int = 0
-    idle: bool = True  # If the text has not been displayed fully yet is waiting to be printed
+    idle: bool = False  # If the text has not been displayed fully yet is waiting to be printed
     frame_tick: int = 0  # Tick integer that count the amount of frames between printing a char
     frame_delay: int = 1  # How many frames to wait until the next letter printing
 

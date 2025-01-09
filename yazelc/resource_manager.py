@@ -1,5 +1,5 @@
 import logging
-from enum import Enum
+import os.path
 from pathlib import Path
 
 import pygame
@@ -10,76 +10,82 @@ from yazelc.font import Font
 from yazelc.utils.game_utils import Direction, Status
 
 
-class SupportedFiletypes(Enum):
-    TRUE_TYPE_FONT = '.ttf'
-    PNG_FILETYPE = '.png'
-    OGG_FILETYPE = '.ogg'
-
-
 class ResourceManager:
-    # TODO: HERE WE WOULD ALSO INITIALIZE THE SOUND RESOURCES
     TRUE_TYPE_FONT_FILETYPE = '.ttf'
     PNG_FILETYPE = '.png'
     OGG_FILETYPE = '.ogg'
 
-    def __init__(self):
+    def __init__(self, resource_root_path: str):
+        """ The resources should be all under the input resource path"""
+        self.resource_root_path = resource_root_path
         self._textures = {}
         self._animation_stripes = {}
         self._fonts = {}
         self._sounds = {}
-        self._pygame_font_objects = {}  # keeps track of pygame's loaded fonts (not the wrapper)
 
-    def add_texture(self, path: Path, explicit_name: str = None) -> pygame.Surface:
-        """ Uses file name stem if explicit name is not passed """
-        name = path.stem if not explicit_name else explicit_name
-        file_type = path.suffix
-        if name not in self._textures:
-            if file_type == self.PNG_FILETYPE:
-                texture = pygame.image.load(path).convert_alpha()
-                self._textures.update({name: texture})
-                return texture
-            else:
-                raise ValueError(f'Unknown texture filetype: {path}')
+    def add(self, resource_file: str):
+        matching_paths = list(Path(self.resource_root_path).glob(f'**/{Path(resource_file)}', recurse_symlinks=True))
+        if matching_paths:
+            if len(matching_paths) > 1:
+                raise ValueError(f'More than one file found for the resource: {matching_paths}')
+            path = matching_paths[0]
+            if path.is_file():
+                if path.suffix == self.PNG_FILETYPE:
+                    self.add_texture(path)
+                elif path.suffix == self.OGG_FILETYPE:
+                    self.add_sound(path)
+                elif path.suffix == self.TRUE_TYPE_FONT_FILETYPE:
+                    self.add_font(path)
+                else:
+                    raise ValueError(f'Unsupported resource filetype: {path}')
         else:
-            logging.info(f'Image on {path} has an existing texture instance with the id {name}')
-            return self.get_texture(name)
+            raise ValueError(f'File "{resource_file}" not found under {self.resource_root_path}')
 
-    def add_sound(self, path: Path, explicit_name: str = None) -> pygame.mixer.Sound:
+    def get(self, resource_file: str):
+        ext = os.path.splitext(resource_file)[-1]
+        try:
+            if ext == self.PNG_FILETYPE:
+                return self._textures[resource_file]
+            elif ext == self.OGG_FILETYPE:
+                return self._sounds[resource_file]
+            elif ext == self.TRUE_TYPE_FONT_FILETYPE:
+                return self._fonts[resource_file]
+        except KeyError:
+            raise ValueError(f'Resource for file {resource_file} was not found')
+
+    def add_texture(self, path: Path) -> pygame.Surface:
         """ Uses file name stem if explicit name is not passed """
-        name = path.stem if not explicit_name else explicit_name
-        file_type = path.suffix
-        if name not in self._sounds:
-            if file_type == self.OGG_FILETYPE:
-                sound = pygame.mixer.Sound(path)
-                self._sounds.update({name: sound})
-                return sound
-            else:
-                raise ValueError(f'Unknown sound filetype: {path}')
+        if path.name not in self._textures:
+            texture = pygame.image.load(path).convert_alpha()
+            self._textures.update({path.name: texture})
+            return texture
         else:
-            logging.info(f'Sound on {path} has an existing Sound instance with the id {name}')
-            self.get_sound(name)
+            logging.info(f'Image on {path} has been already loaded')
+            return self._textures[path.name]
 
-    def add_font(self, path: Path, size: int, color: pygame.Color, explicit_name: str = None) -> Font:
+    def add_sound(self, path: Path) -> pygame.mixer.Sound:
+        """ Uses file name stem if explicit name is not passed """
+        if path.name not in self._sounds:
+            sound = pygame.mixer.Sound(path)
+            self._sounds.update({path.name: sound})
+            return sound
+        else:
+            logging.info(f'Sound on {path} has been already loaded')
+            return self._sounds[path.name]
+
+    def add_font(self, path: Path) -> Font:
         """
-        Uses file name stem if explicit name is not passed
-
         Pygame's font objects are expensive to load. If we want to instantiate the same wrapper font instance
         with, e.g, different colors and sizes, then they will use the same reference to the pygame's freetype font
         """
-        name = path.stem if not explicit_name else explicit_name
-        file_type = path.suffix
-        if name not in self._fonts:
-            if file_type == self.TRUE_TYPE_FONT_FILETYPE:
-                if path not in self._pygame_font_objects:
-                    self._pygame_font_objects.update({path: pygame.freetype.Font(path, size=size)})
-                font = Font(self._pygame_font_objects[path], color)
-                self._fonts.update({name: font})
-                return font
-            else:
-                raise ValueError(f'Unknown font filetype: {path}')
+        if path not in self._fonts:
+            font = pygame.freetype.Font(path)
+            font.origin = True
+            self._fonts.update({path.name: font})
+            return font
         else:
-            logging.info(f'Font on {path} has an existing instance with the id {name}')
-            return self.get_font(name)
+            logging.info(f'Font on {path} has been already loaded')
+            return self._pygame_font_objects[path.name]
 
     def add_animation_strip(self, path: Path, sprite_width: int, flip: bool = False, explicit_name: str = None) -> list[pygame.Surface]:
         """

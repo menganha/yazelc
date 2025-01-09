@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.11" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="54612">
+<map version="1.11" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="54613">
  <tileset firstgid="1" source="../tilesets/overworld.tsx"/>
  <tileset firstgid="4097" source="../tilesets/books_and_treasures.tsx"/>
  <layer id="2" name="water" width="32" height="32">
@@ -134,7 +134,7 @@
 641,770,641,641,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 1031,1031,1031,1031,1031,1031,1031,1031,1032,0,3469,0,0,0,3469,0,3843,3843,3779,3842,3841,3841,3842,3778,0,0,0,0,0,0,0,0,
 965,961,961,961,961,961,961,961,961,0,3600,3598,3598,3598,3601,0,0,0,0,0,0,0,0,0,0,0,14,0,0,0,0,0,
-1032,0,0,0,0,0,0,4161,2382,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1032,0,0,0,0,0,0,0,2382,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 968,0,2955,3020,2957,0,2754,0,2446,0,0,961,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 1032,0,0,0,0,0,0,0,2446,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1625,1625,1626,0,0,
 968,0,2689,0,2754,0,2758,0,2319,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2467,14,1689,1689,1689,0,0,
@@ -182,7 +182,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup color="#aa0000" id="13" name="doors">
+ <objectgroup color="#aa0000" id="13" name="interactive">
   <object id="19692" x="48" y="368" width="16" height="4">
    <properties>
     <property name="target_door" value="dungeon_1:0_0.tmx"/>
@@ -190,18 +190,11 @@
     <property name="target_y" type="int" value="13"/>
    </properties>
   </object>
-  <object id="43124" x="272" y="60" width="16" height="4">
+  <object id="43124" x="272" y="64" width="16" height="4">
    <properties>
     <property name="target_door" value="houses:emil.tmx"/>
     <property name="target_x" type="int" value="8"/>
     <property name="target_y" type="int" value="13"/>
-   </properties>
-  </object>
- </objectgroup>
- <objectgroup color="#cdf80e" id="14" name="interactive">
-  <object id="42955" x="112" y="352" width="16" height="16">
-   <properties>
-    <property name="item" type="int" value="0"/>
    </properties>
   </object>
   <object id="43455" x="448" y="160" width="16" height="16">
@@ -214,5 +207,6 @@
     <property name="text" value="dummy a"/>
    </properties>
   </object>
+  <object id="54612" template="../templates/treasure.tx" x="112" y="368"/>
  </objectgroup>
 </map>

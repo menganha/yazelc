@@ -5,9 +5,9 @@ import pygame
 
 from event.events import InputEvent, ChangeSceneEvent
 from yazelc import zesper
+from yazelc.config import Config
 from yazelc.controller import Controller
 from yazelc.event.event_manager import EventManager
-from yazelc.event.event_queue import EventQueue
 from yazelc.resource_manager import ResourceManager
 
 
@@ -16,13 +16,15 @@ class BaseScene(abc.ABC):
     Base implementation for all scenes. This class is abstract and should not be instantiated.
     """
 
-    def __init__(self, window: pygame.Surface, controller: Controller):
+    def __init__(self, window: pygame.Surface, controller: Controller, config: Config, asset_folder: str):
         self.window: pygame.Surface = window
-        self.resource_manager: ResourceManager = ResourceManager()
+        self.controller: Controller = controller
+        self.config: Config = config
+        self.resource_manager: ResourceManager = ResourceManager(asset_folder)
         self.event_manager: EventManager = EventManager()
         self.event_queue: EventQueue = EventQueue()
-        self.world: zesper.World = zesper.World(self.resource_manager, self.event_queue)
-        self.controller: Controller = controller
+        self.world: zesper.World = zesper.World()
+
         self.next_scene: Optional['BaseScene'] = None
         self.finished: bool = False
         self.event_manager.subscribe_handler_method(ChangeSceneEvent, self.on_change_scene)
@@ -53,10 +55,7 @@ class BaseScene(abc.ABC):
                 self.finished = True
                 self.next_scene = None
 
-        while self.event_queue:
-            event = self.event_queue.popleft()
-            self.event_manager.dispatch_event(event)
-        self.event_queue.process_delayed_events()
+        self.event_manager.dispatch_queue_events()
 
         self.controller.process_input()
         input_event = InputEvent(self.controller)

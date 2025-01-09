@@ -1,76 +1,105 @@
-from yazelc import config as cfg
-from yazelc import dialog_box
+import pygame
+
 from yazelc import zesper
-from yazelc.components import Dialog, Renderable, Position, Menu
+from yazelc.components import Sign, Renderable, Position, Menu, TextBox
+from yazelc.config import Config
 from yazelc.controller import Button
+from yazelc.event.event_manager import EventManager
 from yazelc.event.events import InputEvent, ResumeEvent, DialogTriggerEvent, PauseEvent, SoundTriggerEvent, SoundEndEvent
+from yazelc.font import Font
 from yazelc.menu import menu_box
+from yazelc.resource_manager import ResourceManager
 
 
 class DialogMenuSystem(zesper.Processor):
     """ Handles all text dialog (NPC and signs) and the context menus """
-    TEXT_SCROLL_SOUND_ID = 'text_scroll_1'
+
+    def __init__(self, config: Config, resource_manager: ResourceManager, event_manager: EventManager):
+        self.width = config.window.resolution.x
+        self.height = config.text_box.height
+        self.surface_depth = config.text_box.image_depth  # above everything else but below the pause menu
+        self.x_margin = config.text_box.x_margin
+        self.y_margin = config.text_box.y_margin
+        self.extra_line_spacing = config.text_box.extra_line_spacing
+        self.triangle_vertices: list[tuple[int, int]] = list()
+        for shift in config.text_box.triangle_vertices_rel_pos:
+            self.triangle_vertices.append((self.width - shift.x, self.height - shift.y))
+        self.menu_pos_x = 0
+        self.menu_pos_y = config.window.resolution.y - self.height
+        self.scroll_sound_id = config.text_box.scroll_sound
+        self.bgcolor = config.text_box.bgcolor
+        self.font = Font(resource_manager.get_font(config.text_box.font.name), **config.text_box.font.properties)
+        self.event_manager = event_manager
 
     def process(self):
-        for entity, (dialog, renderable_cmp) in self.world.get_components(Dialog, Renderable):
-            if dialog.idle:
+        for _, (text_box, renderable) in self.world.get_components(TextBox, Renderable):
+            if text_box.idle:
                 continue
 
-            if dialog.frame_tick < dialog.frame_delay:
-                dialog.frame_tick += 1
+            if text_box.frame_tick < text_box.frame_delay:
+                text_box.frame_tick += 1
                 continue
 
-            background = renderable_cmp.image
-            width, height = background.get_size()
-            line_spacing = dialog.font.line_spacing + dialog_box.DELTA_LINE_SPACING
+            line_spacing = self.font.line_spacing + self.extra_line_spacing
 
-            if dialog.index == 0:
-                dialog.x_pos, dialog.y_pos = dialog_box.X_MARGIN, dialog.font.line_spacing + dialog_box.Y_MARGIN
-            if not dialog.font.fits_on_box(dialog.current_sentence(), width):
-                dialog.y_pos += line_spacing
-                dialog.x_pos = dialog_box.X_MARGIN
-                dialog.index_start = dialog.index
-            if dialog.y_pos >= height - dialog_box.Y_MARGIN:
-                dialog_box.add_triangle_signal(entity, self.world)
-                dialog.x_pos, dialog.y_pos = dialog_box.X_MARGIN, dialog.font.line_spacing + dialog_box.Y_MARGIN
-                dialog.index_start = dialog.index
-                dialog.idle = True
-                self.world.event_queue.add(SoundEndEvent(self.TEXT_SCROLL_SOUND_ID))
+            if text_box.index == 0:
+                text_box.x_pos, text_box.y_pos = self.x_margin, self.font.line_spacing + self.y_margin
+
+            if not self.font.fits_on_box(text_box.current_sentence(), self.width):
+                text_box.y_pos += line_spacing
+                text_box.x_pos = self.x_margin
+                text_box.index_start = text_box.index
+
+            if text_box.y_pos >= self.height - self.y_margin:
+                self.add_triangle_signal(renderable.image)
+                text_box.x_pos, text_box.y_pos = self.x_margin, self.font.line_spacing + self.y_margin
+                text_box.index_start = text_box.index
+                text_box.idle = True
+                self.event_manager.event_queue.add(SoundEndEvent(self.scroll_sound_id))
                 continue
 
-            char_to_render = dialog.next_char()
-            dialog.font.render_text_at(char_to_render, background, dialog.x_pos, dialog.y_pos)
-            dialog.x_pos += dialog.font.space_width
-            dialog.index += 1
-            dialog.frame_tick = 0
+            char_to_render = text_box.next_char()
+            self.font.render_text_at(char_to_render, renderable.image, text_box.x_pos, text_box.y_pos)
+            text_box.x_pos += self.font.advance
+            text_box.index += 1
+            text_box.frame_tick = 0
 
-            if dialog.is_at_end():
-                dialog_box.add_triangle_signal(entity, self.world)
-                dialog.idle = True
-                self.world.event_queue.add(SoundEndEvent(self.TEXT_SCROLL_SOUND_ID))
+            if text_box.is_at_end():
+                self.add_triangle_signal(renderable.image)
+                text_box.idle = True
+                self.event_manager.event_queue.add(SoundEndEvent(self.scroll_sound_id))
 
     def on_input(self, input_event: InputEvent):
 
-        for entity, (dialog_, renderable_) in self.world.get_components(Dialog, Renderable):
-            if input_event.controller.is_button_pressed(Button.A) and dialog_.idle:
-                if dialog_.is_at_end():
-                    self.world.remove_component(entity, Renderable)
-                    self.world.remove_component(entity, Position)
-                    dialog_.index = 0
-                    dialog_.index_start = 0
-                    self.world.event_queue.add(ResumeEvent())
+        for entity, (text_box, renderable_) in self.world.get_components(TextBox, Renderable):
+            if input_event.controller.is_button_pressed(Button.A) and text_box.idle:
+                if text_box.is_at_end():
+                    self.world.delete_entity(entity)
+                    self.event_manager.event_queue.add(ResumeEvent())
                 else:
-                    dialog_.idle = False
-                    surface = renderable_.image
-                    surface.fill(cfg.C_BLACK)
-                    self.world.event_queue.add(SoundTriggerEvent(self.TEXT_SCROLL_SOUND_ID))
+                    text_box.idle = False
+                    renderable_.image.fill(self.bgcolor)
+                    self.event_manager.event_queue.add(SoundTriggerEvent(self.scroll_sound_id))
 
         # Handle Menus. TODO: Should we have a separate system to handle these??
         for entity, (menu, renderable_) in self.world.get_components(Menu, Renderable):
             menu_box.handle_menu_input(input_event, entity, menu, self.world)
 
     def on_dialog_trigger(self, dialog_trigger_event: DialogTriggerEvent):
-        dialog = self.world.component_for_entity(dialog_trigger_event.dialog_entity_id, Dialog)
-        dialog_box.create_text_box(dialog_trigger_event.dialog_entity_id, dialog, self.world)
-        self.world.event_queue.add(PauseEvent())
-        self.world.event_queue.add(SoundTriggerEvent(self.TEXT_SCROLL_SOUND_ID))
+        """ Generate a text box entity """
+
+        text_box_entity_id = self.world.create_entity()
+        background = pygame.Surface((self.width, self.height))
+        background.fill(self.bgcolor)
+
+        sign = self.world.component_for_entity(dialog_trigger_event.dialog_entity_id, Sign)
+        self.world.add_component(text_box_entity_id, TextBox(sign.text))
+        self.world.add_component(text_box_entity_id, Renderable(image=background, depth=self.surface_depth))
+        self.world.add_component(text_box_entity_id, Position(self.menu_pos_x, self.menu_pos_y, absolute=True))
+
+        self.event_manager.event_queue.add(PauseEvent())  # TODO: Remove this from here and pass it to the caller
+        self.event_manager.event_queue.add(SoundTriggerEvent(self.scroll_sound_id))
+
+    def add_triangle_signal(self, image: pygame.Surface):
+        """ Creates an entity that signals when the dialog has finished being written onto the dialog screen """
+        pygame.draw.polygon(image, self.font.fgcolor, self.triangle_vertices)

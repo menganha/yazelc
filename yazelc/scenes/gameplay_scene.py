@@ -5,14 +5,13 @@ from typing import Optional, Any
 import pygame
 
 from yazelc import components as cmp
-from yazelc import config as cfg
-from yazelc import dialog_box
 from yazelc import enemy
 from yazelc import hud
 from yazelc import items
 from yazelc import weapons
 from yazelc import zesper
 from yazelc.camera import Camera
+from yazelc.config import Config
 from yazelc.controller import Controller
 from yazelc.event import events
 from yazelc.items import CollectableItemType
@@ -26,7 +25,7 @@ from yazelc.systems.animation_system import AnimationSystem
 from yazelc.systems.camera_system import CameraSystem
 from yazelc.systems.collision_system import CollisionSystem
 from yazelc.systems.combat_system import CombatSystem
-from yazelc.systems.delayed_entity_removal_system import EntityRemovalSystem
+from yazelc.systems.delayed_entity_removal_system import DelayedEntityRemovalSystem
 from yazelc.systems.dialog_menu_system import DialogMenuSystem
 from yazelc.systems.hud_system import HudSystem
 from yazelc.systems.inventory_system import InventorySystem
@@ -38,6 +37,7 @@ from yazelc.systems.tween_system import TweenSystem
 from yazelc.systems.visual_effects_system import VisualEffectsSystem
 from yazelc.utils.game_utils import Direction, IVec
 
+# TODO: Pass all of these to a config file!
 FULL_HEART_IMAGE_PATH = Path('assets', 'sprites', 'full_heart.png')
 PLAYER_IMAGE_PATH = Path('assets', 'sprites', 'player')
 HALF_HEART_IMAGE_PATH = Path('assets', 'sprites', 'half_heart.png')
@@ -47,7 +47,7 @@ COINS_IMAGE_PATH = Path('assets', 'sprites', 'coins.png')
 TREASURE_IMAGE_PATH = Path('assets', 'sprites', 'treasure.png')
 WEAPON_IMAGE_PATH = Path('assets', 'sprites', 'weapon')
 FONT_PATH = Path('assets', 'font', 'Anonymous Pro.ttf')
-FONT_COLOR = cfg.C_WHITE
+FONT_COLOR = pygame.Color(255, 255, 255)
 FONT_SIZE = 12
 SOUND_EFFECTS_PATH = Path('assets', 'sounds')
 ZERO_THRESHOLD = 1e-2
@@ -66,16 +66,16 @@ PROCESSOR_PRIORITY = {system: idx + 1 for idx, system in enumerate(reversed(
      VisualEffectsSystem,
      CameraSystem,
      AnimationSystem,
-     EntityRemovalSystem,
+     DelayedEntityRemovalSystem,
      SoundSystem,
      RenderSystem]))}
 
 
 class GameplayScene(BaseScene):
 
-    def __init__(self, window: pygame.Surface, controller: Controller, map_file_path: Path, start_tile_position: IVec,
-                 player_components: tuple[Any, ...] = None, music_path: Path = None):
-        super().__init__(window, controller)
+    def __init__(self, window: pygame.Surface, controller: Controller, config: Config, map_file_path: Path,
+                 start_tile_position: IVec, player_components: tuple[Any, ...] = None, music_path: Path = None):
+        super().__init__(window, controller, config)
         self.map_data_file = map_file_path
         self.start_tile_position = start_tile_position
         self.camera: Optional[Camera] = None
@@ -130,12 +130,12 @@ class GameplayScene(BaseScene):
         inventory_system = InventorySystem(self.player_entity_id, inventory)
         input_system = PlayerInputSystem(self.player_entity_id)
         vfx_system = VisualEffectsSystem()
-        entity_removal_system = EntityRemovalSystem()
+        entity_removal_system = DelayedEntityRemovalSystem()
         collision_system = CollisionSystem()
         hud_system = HudSystem(hud_entity_id)
         ai_system = AISystem()
         sound_system = SoundSystem()
-        dialog_system = DialogMenuSystem()
+        dialog_system = DialogMenuSystem(self.config)
         self.world.add_processor(ai_system, PROCESSOR_PRIORITY[AISystem])
         self.world.add_processor(input_system, PROCESSOR_PRIORITY[PlayerInputSystem])
         self.world.add_processor(MovementSystem(), PROCESSOR_PRIORITY[MovementSystem])
@@ -147,7 +147,7 @@ class GameplayScene(BaseScene):
         self.world.add_processor(dialog_system, PROCESSOR_PRIORITY[DialogMenuSystem])
         self.world.add_processor(TweenSystem(), PROCESSOR_PRIORITY[TweenSystem])
         self.world.add_processor(CameraSystem(self.camera), PROCESSOR_PRIORITY[CameraSystem])
-        self.world.add_processor(entity_removal_system, PROCESSOR_PRIORITY[EntityRemovalSystem])
+        self.world.add_processor(entity_removal_system, PROCESSOR_PRIORITY[DelayedEntityRemovalSystem])
         self.world.add_processor(AnimationSystem(), PROCESSOR_PRIORITY[AnimationSystem])
         self.world.add_processor(sound_system, PROCESSOR_PRIORITY[SoundSystem])
         self.world.add_processor(RenderSystem(self.window, self.camera), PROCESSOR_PRIORITY[RenderSystem])
@@ -176,7 +176,7 @@ class GameplayScene(BaseScene):
         for tileset_image_path in world_map.get_needed_images_path():
             # We load all the resources for all maps in the particular world
             self.world.resource_manager.add_texture(tileset_image_path)
-        self.world.resource_manager.add_font(FONT_PATH, FONT_SIZE, FONT_COLOR, dialog_box.DIALOG_FONT_ID)
+        # self.world.resource_manager.add_font(FONT_PATH, FONT_SIZE, FONT_COLOR, dialog_box.DIALOG_FONT_ID)
         self.world.resource_manager.add_font(FONT_PATH, FONT_SIZE, FONT_COLOR, menu_box.MENU_FONT_ID)
         self.world.resource_manager.add_texture(FULL_HEART_IMAGE_PATH)
         self.world.resource_manager.add_texture(HALF_HEART_IMAGE_PATH)
@@ -209,7 +209,6 @@ class GameplayScene(BaseScene):
         """
         Generates the map with all the relevant data, e.g., items, enemies, triggers, etc.
         """
-
         self.map = Map(self.map_data_file, self.world.resource_manager)
 
         for depth, map_layer in self.map.get_map_images():
@@ -219,19 +218,16 @@ class GameplayScene(BaseScene):
             self.map.layer_entities.append(layer_entity_id)
 
     def _generate_objects(self):
-        dialog_font = self.world.resource_manager.get_font(dialog_box.DIALOG_FONT_ID)
+        # dialog_font = self.world.resource_manager.get_font(dialog_box.DIALOG_FONT_ID)
         for components in self.map.create_colliders():
             ent_id = self.world.create_entity(*components)
             self.map.object_entities.append(ent_id)
-        for components in self.map.create_interactive_objects(dialog_font):
+        for components in self.map.create_objects(dialog_font):
             ent_id = self.world.create_entity(*components)
             self.map.object_entities.append(ent_id)
-        for door, hitbox in self.map.create_doors():
-            ent_id = self.world.create_entity(door, hitbox)
-            self.map.object_entities.append(ent_id)
         for pos_x, pos_y, enemy_type in self.map.create_enemies():
-            ent_id = enemy.create_enemy_at(pos_x, pos_y, self.world,
-                                           enemy_type)  # TODO: Generalize for any type of enemy
+            # TODO: Generalize for any type of enemy
+            ent_id = enemy.create_enemy_at(pos_x, pos_y, self.world, enemy_type)
             self.map.object_entities.append(ent_id)
 
     def on_exit(self):
@@ -296,7 +292,7 @@ class GameplayScene(BaseScene):
             normal = [0 if abs(value) < ZERO_THRESHOLD else copysign(1, value) for value in
                       (player_velocity.x, player_velocity.y)]
             map_velocity = [- value * MAP_VELOCITY_TRANSITION for value in normal]
-            new_map_position = [nor * res for (nor, res) in zip(normal, cfg.RESOLUTION)]
+            new_map_position = [nor * res for (nor, res) in zip(normal, self.config.window.resolution)]
 
             # Generate new map and add velocity to the map layers and player
             self.map_data_file = door.target_map
@@ -316,10 +312,14 @@ class GameplayScene(BaseScene):
                 self.world.remove_processor(processor_type)
 
             # Run the animation. Remove magic numbers
-            distance = (cfg.RESOLUTION.x if abs(normal[0]) > ZERO_THRESHOLD else cfg.RESOLUTION.y)
+            if abs(normal[0]) > ZERO_THRESHOLD:
+                distance = self.config.window.resolution.x
+            else:
+                distance = self.config.window.resolution.y
             frames_to_exit = round(distance / MAP_VELOCITY_TRANSITION)
             # TODO: The amount of tiles is variable. For example for transitions without doors it , e.g., 1.2 instead of 3
-            velocity_for_three_tiles = [map_vel + 3 * cfg.TILE_WIDTH * nor / frames_to_exit for (map_vel, nor) in
+            velocity_for_three_tiles = [map_vel + 3 * self.map.tmx_data.tilewidth * nor / frames_to_exit for
+                                        (map_vel, nor) in
                                         zip(map_velocity, normal)]
             player_velocity.x, player_velocity.y = velocity_for_three_tiles
             while frames_to_exit > 0:

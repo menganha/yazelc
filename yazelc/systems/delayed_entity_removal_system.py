@@ -2,7 +2,7 @@ from yazelc import zesper
 from yazelc.event.events import DeleteEntityEvent
 
 
-class EntityRemovalSystem(zesper.Processor):
+class DelayedEntityRemovalSystem(zesper.Processor):
     """
     Event listener Removes entities when receiving the event with a potential delay
     """

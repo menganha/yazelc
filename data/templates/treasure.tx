@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <tileset firstgid="1" source="../tilesets/books_and_treasures.tsx"/>
+ <object gid="65" width="16" height="16">
+  <properties>
+   <property name="item" type="int" value="0"/>
+  </properties>
+ </object>
+</template>

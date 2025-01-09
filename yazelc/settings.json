@@ -1,0 +1,25 @@
+{
+    "window": {
+        "resolution": [272, 240],
+        "bgcolor": [0, 0, 0]
+    },
+    "text_box": {
+        "triangle_vertices_rel_pos": [
+            [5, 8], [15, 8], [10, 3]
+        ],
+        "height": 50,
+        "extra_line_spacing": 7,
+        "x_margin": 5,
+        "y_margin": 5,
+        "image_depth": 1900,
+        "bgcolor": [0, 255, 0],
+        "font": {
+            "name": "Anonymous Pro.ttf",
+            "properties": {
+                "size": 12,
+                "fgcolor": [255, 255, 255]
+            }
+        },
+        "scroll_sound": "text_scroll_1.ogg"
+    }
+}
