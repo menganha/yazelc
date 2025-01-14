@@ -44,7 +44,7 @@ class Gamepad(Controller):
         self.previousKeyStates = {}
         self.gamepad = gamepad
 
-    def process_input(self):
+    def update(self):
         self.previousKeyStates = copy(self.currentKeyStates)
         for button in self.GamepadButton:
             if button in (self.GamepadButton.LEFT, self.GamepadButton.RIGHT):

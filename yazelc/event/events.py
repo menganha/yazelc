@@ -8,15 +8,9 @@ from functools import partial
 from pygame import Color
 
 from yazelc.components import Collectable
-from yazelc.controller import Controller
 from yazelc.items import CollectableItemType
 
 eventclass = partial(dataclass, frozen=True)
-
-
-@eventclass
-class InputEvent:
-    controller: Controller
 
 
 @eventclass
@@ -56,11 +50,6 @@ class PauseEvent:
 class DamageEvent:
     victim_id: int
     attacker_id: int
-
-
-@eventclass
-class ResumeEvent:
-    pass
 
 
 @eventclass
@@ -109,10 +98,6 @@ class SoundTriggerEvent:
 class SoundEndEvent:
     id_str: str
 
-
-@eventclass
-class DialogTriggerEvent:
-    dialog_entity_id: int
 
 
 @eventclass

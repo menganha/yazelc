@@ -1,57 +1,37 @@
 from collections import defaultdict
-from collections import deque
 from collections.abc import Callable
 from types import MethodType
-from typing import Any
-from typing import TypeVar
+from typing import Any, TypeVar
 from weakref import ref, WeakMethod
 
-from yazelc.utils.timer import Timer
+import pygame
+
+from yazelc.controller import Controller, Button
+from yazelc.event.events import eventclass
+from yazelc.zesper import World
 
 _EVENT = TypeVar('_EVENT')  # used for the static type checker for admitting any subclass
 _EVENT_TYPE = type[_EVENT]
 
 
-class EventQueue:
+@eventclass
+class CloseWindowEvent:
+    pass  # TODO: Eventually move it to a window class
 
-    def __init__(self):
-        self._event_queue: deque[Any] = deque()  # collects all events to be fired on the next frame
-        self._event_buffer: list[Any] = list()  # collects events with delays
-        self._buffer_delays: dict[int, Timer] = dict()
 
-    def add(self, event: Any, frames_delay: int = 0):
-        if frames_delay:
-            self._event_buffer.append(event)
-            self._buffer_delays[id(event)] = Timer(frames_delay)
-        else:
-            self._event_queue.append(event)
+@eventclass
+class ButtonDownEvent:
+    button: Button  # TODO: Eventually move it to a controller class
 
-    def popleft(self) -> Any:
-        return self._event_queue.popleft()
 
-    def __bool__(self):
-        return bool(self._event_queue)
+@eventclass
+class ButtonPressedEvent:
+    button: Button  # TODO: Eventually move it to a controller class
 
-    def process_delayed_events(self):
-        """
-        Removes one frame of waiting from the delay of the events in the buffer queue.
-        If the frame delay reaches zero then it adds the event to the main queue
-        """
-        events_to_add = list()
-        for event in self._event_buffer:
-            timer = self._buffer_delays[id(event)]
-            timer.tick()
-            if timer.has_finished():
-                events_to_add.append(event)
-        self._event_queue.extend(events_to_add)
-        for event in events_to_add:
-            self._event_buffer.remove(event)
-            self._buffer_delays.pop(id(event))
 
-    def clear(self):
-        self._event_queue.clear()
-        self._event_buffer.clear()
-
+@eventclass
+class ButtonReleasedEvent:
+    button: Button  # TODO: Eventually move it to a controller class
 
 class EventManager:
     """
@@ -62,19 +42,36 @@ class EventManager:
 
     def __init__(self):
         self.subscribers = defaultdict(set)
-        self.event_queue = EventQueue()
 
-    def dispatch_queue_events(self):
-        """ Process all events from the queue """
-        while self.event_queue:
-            event = self.event_queue.popleft()
-            self.dispatch_event(event)
-        self.event_queue.process_delayed_events()
+    def process_all_events(self, controller: Controller = None, world: World = None):
+        """ Dispatches all the game events and let the handlers process them """
 
-    def subscribe_handler_method(self, event_type: _EVENT_TYPE, handler_method: Callable[[_EVENT], None]):
-        """ Subscribe handler method to event type """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.trigger_event(CloseWindowEvent())
+
+        if controller:
+            controller.update()
+            for button in Button:
+                if controller.is_button_down(button):
+                    self.trigger_event(ButtonDownEvent(button))
+                elif controller.is_button_pressed(button):
+                    self.trigger_event(ButtonPressedEvent(button))
+                elif controller.is_button_released(button):
+                    self.trigger_event(ButtonReleasedEvent(button))
+
+        if world:
+            for processor in world.get_all_processors():
+                while processor.event_queue:
+                    event = processor.event_queue.popleft()
+                    self.trigger_event(event)
+                processor.event_queue.process_delayed_events()
+
+    def subscribe(self, event_type: _EVENT_TYPE, *handlers: Callable[[_EVENT], None]):
+        """ Subscribe handler methods to event type """
         event_name = event_type.__name__.lower()
-        self._subscribe_handler_method(event_name, handler_method)
+        for hdl in handlers:
+            self._subscribe_handler_method(event_name, hdl)
 
     def subscribe_handler(self, instance: Any):
         """
@@ -84,7 +81,7 @@ class EventManager:
         for event_name, handler_method in self._relevant_methods(instance):
             self._subscribe_handler_method(event_name, handler_method)
 
-    def dispatch_event(self, event: _EVENT):
+    def trigger_event(self, event: _EVENT):
         event_name = type(event).__name__.lower()
         for listener in self.subscribers[event_name]:
             listener()(event)

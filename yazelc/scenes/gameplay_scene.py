@@ -163,11 +163,11 @@ class GameplayScene(BaseScene):
         self.event_manager.subscribe_handler(ai_system)
         self.event_manager.subscribe_handler(sound_system)
         self.event_manager.subscribe_handler(dialog_system)
-        self.event_manager.subscribe_handler_method(events.DeathEvent, self.on_death)
-        self.event_manager.subscribe_handler_method(events.HitDoorEvent, self.on_hit_door)
-        self.event_manager.subscribe_handler_method(events.RestartEvent, self.on_restart)
-        self.event_manager.subscribe_handler_method(events.PauseEvent, self.on_pause)
-        self.event_manager.subscribe_handler_method(events.ResumeEvent, self.on_resume)
+        self.event_manager.subscribe(events.DeathEvent, self.on_death)
+        self.event_manager.subscribe(events.HitDoorEvent, self.on_hit_door)
+        self.event_manager.subscribe(events.RestartEvent, self.on_restart)
+        self.event_manager.subscribe(events.PauseEvent, self.on_pause)
+        self.event_manager.subscribe(events.ResumeEvent, self.on_resume)
 
     def _load_resources(self):
         """ Should load all resources for a given scene """

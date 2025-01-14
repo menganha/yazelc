@@ -1,7 +1,10 @@
-""" Module extends the esper package"""
-from typing import TypeVar, Optional, Union, Type
+from __future__ import annotations
+
+from typing import TypeVar, Optional, Union, Type, Iterator
 
 import esper
+
+from event.event_queue import EventQueue
 
 C = TypeVar('C')
 C_alt = TypeVar('C_alt')  # alternative component
@@ -52,6 +55,11 @@ class World(esper.World):
             self._processors.remove(processor)
         return processors_to_remove
 
+    def get_all_processors(self) -> Iterator[Processor]:
+        """ Get all processors in current world """
+        for processor in self._processors:
+            yield processor
+
     def clear_processors(self):
         self._processors.clear()
 
@@ -60,5 +68,8 @@ class World(esper.World):
         self.clear_processors()
 
 
-class Processor(esper.Processor):  # noqa
+class Processor(esper.Processor):
     world: World
+
+    def __init__(self):
+        self.event_queue = EventQueue()

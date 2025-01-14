@@ -72,7 +72,7 @@ class TestEvent(unittest.TestCase):
         self.event_manager.subscribe(MockEvent, mock_method_1)
         self.event_manager.subscribe(MockEvent, mock_method_2)
         self.event_manager.subscribe(MockEvent, mock_method_3)
-        self.event_manager.dispatch_event(event)
+        self.event_manager.trigger_event(event)
         mock_method_1.assert_called_once_with(event)
         mock_method_2.assert_called_once_with(event)
         mock_method_3.assert_called_once_with(event)

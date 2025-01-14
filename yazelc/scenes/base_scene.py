@@ -22,12 +22,11 @@ class BaseScene(abc.ABC):
         self.config: Config = config
         self.resource_manager: ResourceManager = ResourceManager(asset_folder)
         self.event_manager: EventManager = EventManager()
-        self.event_queue: EventQueue = EventQueue()
         self.world: zesper.World = zesper.World()
 
         self.next_scene: Optional['BaseScene'] = None
         self.finished: bool = False
-        self.event_manager.subscribe_handler_method(ChangeSceneEvent, self.on_change_scene)
+        self.event_manager.subscribe(ChangeSceneEvent, self.on_change_scene)
 
     @abc.abstractmethod
     def on_enter(self):
@@ -55,8 +54,8 @@ class BaseScene(abc.ABC):
                 self.finished = True
                 self.next_scene = None
 
-        self.event_manager.dispatch_queue_events()
+        self.event_manager.process_all_events()
 
-        self.controller.process_input()
+        self.controller.update()
         input_event = InputEvent(self.controller)
-        self.event_manager.dispatch_event(input_event)
+        self.event_manager.trigger_event(input_event)

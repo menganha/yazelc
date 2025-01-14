@@ -4,15 +4,18 @@
         "bgcolor": [0, 0, 0]
     },
     "text_box": {
-        "triangle_vertices_rel_pos": [
-            [5, 8], [15, 8], [10, 3]
+        "triangle_signal_vertices": [
+            [257, 50], [262, 55], [267, 50]
         ],
-        "height": 50,
-        "extra_line_spacing": 7,
-        "x_margin": 5,
+        "rect_signal": [
+            [258, 50, 8, 5]
+        ],
+        "height": 60,
+        "extra_line_spacing": 1,
+        "x_margin": 12,
         "y_margin": 5,
         "image_depth": 1900,
-        "bgcolor": [0, 255, 0],
+        "bgcolor": [0, 0, 0],
         "font": {
             "name": "Anonymous Pro.ttf",
             "properties": {

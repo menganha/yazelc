@@ -25,7 +25,7 @@ class Keyboard(Controller):
         self.currentKeyStates = None
         self.previousKeyStates = None
 
-    def process_input(self):
+    def update(self):
         self.previousKeyStates = self.currentKeyStates
         self.currentKeyStates = pygame.key.get_pressed()
 

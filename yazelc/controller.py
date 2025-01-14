@@ -22,7 +22,8 @@ class Controller(abc.ABC):
     """ Main interface to game input """
 
     @abc.abstractmethod
-    def process_input(self):
+    def update(self):
+        """ Updates the state of the buttons """
         pass
 
     @abc.abstractmethod
