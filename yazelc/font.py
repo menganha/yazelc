@@ -1,63 +1,113 @@
 import pygame
 import pygame.freetype
 
+from yazelc.utils.game_utils import IVec
+
 
 class Font:
-    """ Wrapper around the pygame's freetype Fonts """
+    """
+    Utility class to load and render fonts from a simple image or a ttf. The class caches the characters in individual
+    pygame surfaces for improved optimization. The image is expected to have the consecutive chars in the same order as
+    the ascii table.
+    """
 
-    def __init__(self, font: pygame.freetype.Font, size: int, fgcolor: pygame.Color):
-        self.font = font
-        self.size = size
-        self.fgcolor = fgcolor
-        self.line_spacing = self.font.get_sized_height(size)
-        self.advance = self.font.get_rect(' ', size=size).width
+    def __init__(self, char_surfaces: dict[str, tuple[pygame.Surface, int]], height: int, color: pygame.Color):
+        self.height = height
+        self._char_surfaces = char_surfaces
+        self.color = color  # we have it for reference
 
-    def render_text_at(self, text: str, target_surface: pygame.Surface,
-                       pos_x: int | None = None, pos_y: int | None = None) -> pygame.Rect:
-        """
-        Renders text at a specific location of the target surface. If a dimension is not explicitly provided, the
-        function will try to center the text on that dimension. Keyword arguments are passed directly to the
-        base functions
-        """
-        width, height = target_surface.get_size()
+    def render_to(self, target_surface: pygame.Surface, target_coord: IVec, text: str,
+                  extra_line_spacing: int = 0):
+        """ Returns a surface containing all the text. It supports multiline text """
+        x_offset = target_coord.x
+        y_offset = target_coord.y
+        for line in text.splitlines():
+            for char in line:
+                char_sur, width = self._char_surfaces[char]
+                target_surface.blit(char_sur, (x_offset, y_offset))
+                x_offset += width
+            x_offset = target_coord.x
+            y_offset += self.height + extra_line_spacing
 
-        rect = self.font.get_rect(text, size=self.size)
-        center_x = (-rect.width + width) // 2
-        center_y = (-rect.height + height) // 2
-
-        target_pos_x = center_x if pos_x is None else pos_x
-        target_pos_y = center_y if pos_y is None else pos_y
-        return self.font.render_to(target_surface, (target_pos_x, target_pos_y), text, size=self.size,
-                                   fgcolor=self.fgcolor
-                                   )
-
-    def render(self, text: str, center: bool = False) -> pygame.Surface:
-
-        max_width, max_height, current_height = 0, 0, self.line_spacing
-        text_lines = text.splitlines()
-        if len(text_lines) > 1:
-            for line in text_lines:
-                _, _, width, height = self.font.get_rect(line, size=self.size)
-                height += current_height
-                max_width = max(max_width, width)
-                max_height = max(max_height, height)
-                current_height += self.line_spacing
-            surface = pygame.Surface((max_width, max_height))
-
-            current_height = self.line_spacing
-            for line in text_lines:
-                if center:
-                    x = (max_width - self.font.get_rect(line, size=self.size).width) // 2
-                else:
-                    x = 0
-                self.font.render_to(surface, (x, current_height), line, size=self.size, fgcolor=self.fgcolor)
-                current_height += self.line_spacing
-        else:
-            surface, _ = self.font.render(text, size=self.size, fgcolor=self.fgcolor)
-
+    def render(self, text: str, extra_line_spacing: int = 0) -> pygame.Surface:
+        """ Renders to a transparent surface where the input texts fits exactly """
+        lines = text.splitlines()
+        sur_width = self._get_max_width(lines)
+        sur_height = self.height * len(lines) + extra_line_spacing * (len(lines) - 1)
+        surface = pygame.Surface((sur_width, sur_height), flags=pygame.SRCALPHA)
+        self.render_to(surface, IVec(0, 0), text, extra_line_spacing)
         return surface
 
-    def fits_on_box(self, text: str, box_width: int):
-        """ Checks if the sentence with the next word added in fits in the give width """
-        bounds = self.font.get_rect(text, size=self.size)
-        return bounds.width < box_width
+    def get_width(self, text: str) -> int:
+        """ Checks if line of text fits on box. Does not support multiline """
+        total_width = sum(self._char_surfaces[char][1] for char in text)
+        return total_width
+
+    def _get_max_width(self, lines: list[str]) -> int:
+        """ Returns the max width of a list of lines """
+        max_width = 0
+        for line in lines:
+            line_width = self.get_width(line)
+            max_width = max(max_width, line_width)
+        return max_width
+
+    @classmethod
+    def from_surface(cls, surface: pygame.Surface, color: pygame.Color):
+        """ Admits surfaces with the printable ascii characters organizes in the usual 16x6 table """
+        w, h = surface.get_size()
+        width, height = IVec(w // 16, h // 6)
+
+        char_surfaces = dict()
+        pos = [0, 0]
+        green_color = pygame.Color(0, 255, 0)
+        for idx in range(ord(' '), ord('~') + 1):
+            char = chr(idx)
+            actual_width = 0
+            for x in range(pos[0], pos[0] + width):
+                color_at_x = surface.get_at((x, pos[1]))
+                if color_at_x == green_color:
+                    break
+                else:
+                    actual_width += 1
+
+            sur = surface.subsurface(pygame.Rect(pos[0], pos[1], actual_width, height))
+            char_surfaces[char] = (sur, actual_width)
+            if (idx + 1) % 16:
+                pos[0] += width
+            else:
+                pos[0] = 0
+                pos[1] += height
+
+        instance = cls(char_surfaces, height, color)
+        return instance
+
+    @classmethod
+    def from_font(cls, font: pygame.font.Font, color: pygame.Color):
+
+        height = font.get_linesize()
+
+        char_surfaces = dict()
+        for idx in range(ord(' '), ord('~') + 1):
+            char = chr(idx)
+            surface = font.render(char, True, color)
+            surface = surface.convert_alpha()
+            char_surfaces[char] = (surface, surface.get_width())
+
+        instance = cls(char_surfaces, height, color)
+        return instance
+
+    def save_to_image_atlas(self, output_path: str):
+        surface_atlas = pygame.Surface((8 * 16, self.height * 6))
+        x = 0
+        y = 0
+        for idx in range(ord(' '), ord('~') + 1):
+            char = chr(idx)
+            char_surface, width = self._char_surfaces[char]
+            surface_atlas.blit(char_surface, (x, y))
+            if (idx + 1) % 16:
+                x += width
+            else:
+                x = 0
+                y += self.height
+
+        pygame.image.save(surface_atlas, output_path)

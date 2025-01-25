@@ -38,13 +38,13 @@ class IntroScene(BaseScene):
 
     def on_enter(self):
         # load resources
-        pg_logo_surface = self.world.resource_manager.add_texture(PG_LOGO)
+        pg_logo_surface = self.world.resource_manager.load_image(PG_LOGO)
         pg_logo_surface.set_alpha(0)
         scale = 0.10
         pg_logo_surface = pygame.transform.smoothscale(pg_logo_surface,
                                                        (int(pg_logo_surface.get_width() * scale),
                                                         int(pg_logo_surface.get_height() * scale)))
-        shield_surface = self.world.resource_manager.add_texture(SHIELD_LOGO)
+        shield_surface = self.world.resource_manager.load_image(SHIELD_LOGO)
         pygame.mixer.music.load(MUSIC_PATH)
         pygame.mixer.music.play(-1)
 

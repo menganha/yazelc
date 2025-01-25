@@ -6,20 +6,23 @@ from yazelc.config import Config
 from yazelc.controller import Button
 from yazelc.event.event_manager import ButtonDownEvent
 from yazelc.event.events import eventclass, SoundTriggerEvent, SoundEndEvent
-from yazelc.font import Font
 from yazelc.resource_manager import ResourceManager
+from yazelc.utils.game_utils import IVec
+
+
+@eventclass
+class DialogMenuExitEvent:
+    dialog_entity_id: int
+
+
+@eventclass
+class DialogMenuTriggerEvent:
+    sign_ent_id: int
 
 
 class DialogMenuSystem(zesper.Processor):
     """ Handles all text dialog (NPC and signs) and the context menus """
 
-    @eventclass
-    class EvDialogMenuExit:
-        dialog_entity_id: int
-
-    @eventclass
-    class EVDialogMenuTrigger:
-        sign_ent_id: int
 
     def __init__(self, config: Config, resource_manager: ResourceManager):
         super().__init__()
@@ -29,13 +32,13 @@ class DialogMenuSystem(zesper.Processor):
         self.x_margin = config.text_box.x_margin
         self.y_margin = config.text_box.y_margin
         self.extra_line_spacing = config.text_box.extra_line_spacing
-        self.triangle_signal_veritces = config.text_box.triangle_signal_vertices
+        self.triangle_signal_vertices = config.text_box.triangle_signal_vertices
         self.rect_signal = config.text_box.rect_signal
         self.menu_pos_x = 0
         self.menu_pos_y = config.window.resolution.y - self.height
         self.scroll_sound_id = config.text_box.scroll_sound
         self.bgcolor = config.text_box.bgcolor
-        self.font = Font(resource_manager.get_font(config.text_box.font.name), **config.text_box.font.properties)
+        self.font = resource_manager.font(config.text_box.font.name, **config.text_box.font.properties)
 
     def process(self):
         for _, (text_box, renderable) in self.world.get_components(TextBox, Renderable):
@@ -43,36 +46,36 @@ class DialogMenuSystem(zesper.Processor):
             if text_box.idle:
                 continue
 
-            # How fast we write into the screen
-            if text_box.frame_tick < text_box.frame_delay:
+            if text_box.frame_tick < text_box.frame_delay:  # Wait (thi is how fast we type into the screen)
                 text_box.frame_tick += 1
                 continue
 
-            line_spacing = self.font.line_spacing + self.extra_line_spacing
+            line_spacing = self.font.height + self.extra_line_spacing
 
-            if text_box.index == 0:
-                text_box.x_pos, text_box.y_pos = self.x_margin, self.font.line_spacing + self.y_margin
+            if text_box.cursor == 0:
+                text_box.x_pos, text_box.y_pos = self.x_margin, self.y_margin
 
             # If the next word doesn't fit try next line
-            if not self.font.fits_on_box(text_box.current_sentence(), self.width - 2 * self.x_margin):
+            if self.font.get_width(text_box.current_sentence()) > (self.width - 2 * self.x_margin):
                 text_box.y_pos += line_spacing
                 text_box.x_pos = self.x_margin
-                text_box.index_start = text_box.index
+                text_box.cursor_start = text_box.cursor
 
             # If the text has filled the box draw triangle signal
-            if text_box.y_pos >= self.height - self.y_margin:
+            if text_box.y_pos >= self.height - self.y_margin - self.font.height:
                 self.add_triangle_signal(renderable.image)
-                text_box.x_pos, text_box.y_pos = self.x_margin, self.font.line_spacing + self.y_margin
-                text_box.index_start = text_box.index
+                text_box.x_pos, text_box.y_pos = self.x_margin, self.y_margin
+                text_box.cursor_start = text_box.cursor
                 text_box.idle = True
                 self.event_queue.add(SoundEndEvent(self.scroll_sound_id))
                 continue
 
             # Render next character
             char_to_render = text_box.next_char()
-            self.font.render_text_at(char_to_render, renderable.image, text_box.x_pos, text_box.y_pos)
-            text_box.x_pos += self.font.advance
-            text_box.index += 1
+            target_pos = IVec(text_box.x_pos, text_box.y_pos)
+            self.font.render_to(renderable.image, target_pos, char_to_render)
+            text_box.x_pos += self.font.get_width(char_to_render)
+            text_box.cursor += 1
             text_box.frame_tick = 0
 
             # If all text is written
@@ -87,7 +90,7 @@ class DialogMenuSystem(zesper.Processor):
                 if text_box.idle:
                     if text_box.is_at_end():
                         self.world.delete_entity(entity)
-                        self.event_queue.add(self.EvDialogMenuExit(entity))
+                        self.event_queue.add(DialogMenuExitEvent(entity))
                     else:
                         text_box.idle = False
                         renderable_.image.fill(self.bgcolor)
@@ -97,7 +100,8 @@ class DialogMenuSystem(zesper.Processor):
         # for entity, (menu, renderable_) in self.world.get_components(Menu, Renderable):
         #     menu_box.handle_menu_input(input_event, entity, menu, self.world)
 
-    def on_dialog_trigger(self, dialog_trigger_event: EVDialogMenuTrigger):
+    # TODO: maybe do not trigger it on event, simply call it. Do we use it this way anywhere else?
+    def on_dialog_trigger(self, dialog_trigger_event: DialogMenuTriggerEvent):
         """ Generates a text box entity """
         text_box_entity_id = self.world.create_entity()
 
@@ -113,8 +117,8 @@ class DialogMenuSystem(zesper.Processor):
 
     def add_triangle_signal(self, image: pygame.Surface):
         """ Creates an entity that signals when the dialog has finished being written onto the dialog screen """
-        pygame.draw.polygon(image, self.font.fgcolor, self.triangle_signal_veritces)
+        pygame.draw.polygon(image, self.font.color, self.triangle_signal_vertices)
 
     def add_square_signal(self, image: pygame.Surface):
         """ Creates an entity that signals when the dialog has finished being written onto the dialog screen """
-        pygame.draw.rect(image, self.font.fgcolor, self.rect_signal)
+        pygame.draw.rect(image, self.font.color, self.rect_signal)

@@ -4,6 +4,7 @@ from enum import Enum, auto
 
 import pygame
 
+from yazelc.animation import AnimationSequence
 from yazelc.font import Font
 from yazelc.items import CollectableItemType
 from yazelc.tween import TweenFunction
@@ -70,8 +71,8 @@ class TextBox:
     Text boxes used for dialog
     """
     text: str
-    index: int = 0  # Index of the char at which the rendered text is actually in
-    index_start: int = 0
+    cursor: int = 0  # Index of the char at which the rendered text is actually in
+    cursor_start: int = 0
     x_pos: int = 0
     y_pos: int = 0
     idle: bool = False  # If the text has not been displayed fully yet is waiting to be printed
@@ -79,16 +80,16 @@ class TextBox:
     frame_delay: int = 1  # How many frames to wait until the next letter printing
 
     def next_char(self) -> str:
-        return self.text[self.index]
+        return self.text[self.cursor]
 
     def is_at_end(self) -> bool:
-        return self.index >= len(self.text)
+        return self.cursor >= len(self.text)
 
     def current_sentence(self) -> str:
         """ Gives the sentence until the word (including it) at which the index is """
-        sentence = self.text[self.index_start:self.index + 1]
+        sentence = self.text[self.cursor_start:self.cursor + 1]
         n_words = len(sentence.rstrip().split(' '))
-        words = self.text[self.index_start:].split(' ')[:n_words]
+        words = self.text[self.cursor_start:].split(' ')[:n_words]
         return ' '.join(words)
 
 
@@ -301,18 +302,6 @@ class State:
 
 @component
 class Animation:
-    strip: list[pygame.Surface]
-    frame_sequence: list[int]
-    one_loop: bool = False
-    index: int = field(init=False)
-    frame_counter: int = field(init=False)
-    is_playing: bool = field(init=False, default=True)
-
-    def __post_init__(self):
-        self.frame_counter = 0
-        self.index = 0
-
-    @classmethod
-    def from_delay(cls, strip: list[pygame.Surface], delay: int, one_loop: bool = False):
-        frame_sequence = [idx for idx in range(len(strip)) for _ in range(delay)]
-        return cls(strip, frame_sequence, one_loop)
+    sequence: AnimationSequence
+    frame_counter: int = 0
+    is_playing: bool = False

@@ -8,19 +8,19 @@
             [257, 50], [262, 55], [267, 50]
         ],
         "rect_signal": [
-            [258, 50, 8, 5]
+            [260, 50, 6, 5]
         ],
         "height": 60,
-        "extra_line_spacing": 1,
+        "extra_line_spacing": 3,
         "x_margin": 12,
         "y_margin": 5,
         "image_depth": 1900,
         "bgcolor": [0, 0, 0],
         "font": {
-            "name": "Anonymous Pro.ttf",
+            "name": "Px437_Portfolio_6x8.ttf",
             "properties": {
-                "size": 12,
-                "fgcolor": [255, 255, 255]
+                "size": 8,
+                "color": [255, 255, 255]
             }
         },
         "scroll_sound": "text_scroll_1.ogg"

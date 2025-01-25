@@ -175,12 +175,12 @@ class GameplayScene(BaseScene):
         world_map = WorldMap.from_map_file_path(self.map_data_file)
         for tileset_image_path in world_map.get_needed_images_path():
             # We load all the resources for all maps in the particular world
-            self.world.resource_manager.add_texture(tileset_image_path)
+            self.world.resource_manager.load_image(tileset_image_path)
         # self.world.resource_manager.add_font(FONT_PATH, FONT_SIZE, FONT_COLOR, dialog_box.DIALOG_FONT_ID)
         self.world.resource_manager.add_font(FONT_PATH, FONT_SIZE, FONT_COLOR, menu_box.MENU_FONT_ID)
-        self.world.resource_manager.add_texture(FULL_HEART_IMAGE_PATH)
-        self.world.resource_manager.add_texture(HALF_HEART_IMAGE_PATH)
-        self.world.resource_manager.add_texture(EMPTY_HEART_IMAGE_PATH)
+        self.world.resource_manager.load_image(FULL_HEART_IMAGE_PATH)
+        self.world.resource_manager.load_image(HALF_HEART_IMAGE_PATH)
+        self.world.resource_manager.load_image(EMPTY_HEART_IMAGE_PATH)
         self.world.resource_manager.add_animation_strip(TREASURE_IMAGE_PATH, InventorySystem.TREASURE_TILE_SIZE,
                                                         explicit_name=InventorySystem.TREASURE_TEXTURE_ID)
         self.world.resource_manager.add_animation_strip(COINS_IMAGE_PATH, items.COIN_TILE_SIZE,
@@ -188,7 +188,7 @@ class GameplayScene(BaseScene):
         self.world.resource_manager.add_animation_strip(BOMB_IMG_PATH, weapons.BOMB_SPRITE_WIDTH,
                                                         explicit_name=weapons.BOMB_SPRITES_ID)
         for path in SOUND_EFFECTS_PATH.glob(f'*{self.resource_manager.OGG_FILETYPE}'):
-            self.world.resource_manager.add_sound(path)
+            self.world.resource_manager.load_sound(path)
 
         self.world.resource_manager.add_all_animation_strips(ENEMY_PATH, enemy.KEFER_ID, enemy.KEFER_SPRITE_WIDTH)
         self.world.resource_manager.add_all_animation_strips(PLAYER_IMAGE_PATH, player.SPRITE_SHEET_ID,
