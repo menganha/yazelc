@@ -129,7 +129,8 @@ class Map:
                         collider = properties[self.COLLIDER_PROPERTY][0]  # Assume tile has a single collider box
                         hit_box = cmp.HitBox(x * self.tmx_data.tilewidth + collider.x,
                                              y * self.tmx_data.tileheight + collider.y, collider.width, collider.height,
-                                             impenetrable=True)
+                                             solid=True
+                                             )
                         yield (hit_box,)
 
     def create_objects(self) -> Iterator[list]:
@@ -143,7 +144,7 @@ class Map:
                 collider = obj.properties['colliders'][0]  # Assume tile has a single collider box
                 hit_box = cmp.HitBox(obj.x + collider.x, obj.y + collider.y,
                                      collider.width, collider.height,
-                                     impenetrable=True
+                                     solid=True
                                      )
                 components.append(hit_box)
 

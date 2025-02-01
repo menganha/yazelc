@@ -1,3 +1,5 @@
+import logging
+
 import pygame
 
 from yazelc import components as cmp
@@ -5,6 +7,7 @@ from yazelc import zesper
 from yazelc.camera import Camera
 from yazelc.config import Config
 
+logger = logging.getLogger(__name__)
 
 class RenderSystem(zesper.Processor):
     def __init__(self, window: pygame.Surface, config: Config, camera: Camera = None):
@@ -44,7 +47,8 @@ class RenderSystem(zesper.Processor):
             else:
                 img = rend.image
 
-            self.window.blit(img, (round(screen_pos.x), round(screen_pos.y)))
+            rounded_x, rounded_y = round(screen_pos.x), round(screen_pos.y)
+            self.window.blit(img, (rounded_x, rounded_y))
 
         # TODO: They can be on the the same loop if the position has the absolute flag on
         # Render native shapes which are (normally) associated with particle effects

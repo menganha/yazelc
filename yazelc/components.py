@@ -19,22 +19,22 @@ class Position(pygame.Vector2):
     camera is positioned
     """
 
-    def __init__(self, x: float = 0, y: float = 0, absolute: bool = False):
+    def __init__(self, x: float = 0.0, y: float = 0.0, absolute: bool = False):
         super().__init__(x, y)
         self.absolute = absolute
-        self.prev_x: float = x
-        self.prev_y: float = y
+        self.prev_x: float = float(x)
+        self.prev_y: float = float(y)
 
-    def move_ip(self, delta_x: float | int, delta_y: float | int):
-        self.prev_x = self.x
-        self.prev_y = self.y
-        self.x += delta_x
-        self.y += delta_y
+    def __setattr__(self, key, value):
+        if key in ('x', 'y'):
+            old_value = getattr(self, key)
+            setattr(self, f'prev_{key}', old_value)
+        super().__setattr__(key, value)
 
-    def update(self, x: float | pygame.Vector2 | tuple[float, float] | list[float] = 0, y: float = 0, ) -> None:
-        self.prev_x = self.x
-        self.prev_y = self.y
-        super().update(x, y)
+    # def update(self, x: float | pygame.Vector2 | tuple[float, float] | list[float] = 0, y: float = 0, ) -> None:
+    #     self.prev_x = self.x
+    #     self.prev_y = self.y
+    #     super().update(x, y)
 
     @classmethod
     def on_screen_center(cls, surface: pygame.Surface, width: int, height: int, absolute: bool = False):
@@ -59,16 +59,23 @@ class Acceleration(Velocity): pass
 
 
 @component
+class Move:
+    velocity: float
+    goal: IVec
+    time_steps: int = -1
+    vel_x: float = 0.0
+    vel_y: float = 0.0
+
+@component
 class Sign:
     """ Used for dialogs or signs in game """
     text: str
-    # font: Font
 
 
 @component()
 class TextBox:
     """
-    Text boxes used for dialog
+    Text boxes used for showing the dialog
     """
     text: str
     cursor: int = 0  # Index of the char at which the rendered text is actually in
@@ -177,22 +184,21 @@ class HitBox(pygame.Rect):
     hitboxes. These are used to implement the "soft corner collision" seen in games like Zelda: A Link to the Past.
     """
 
-    def __init__(self, x_pos: int, y_pos: int, width: int, height: int, impenetrable: bool = False, skin_depth: int = 0,
+    def __init__(self, x_pos: int, y_pos: int, width: int, height: int, solid: bool = False, skin_depth: int = 1,
                  destroy_on_contact: bool = False):
         super().__init__(x_pos, y_pos, width, height)
-        self.impenetrable = impenetrable
+        self.solid = solid
         self.skin_depth = skin_depth
         self.destroy_on_contact = destroy_on_contact
-        self.corner_rects: list[pygame.Rect] = []
-        if self.skin_depth:
-            self.corner_rects = [pygame.Rect(0, 0, skin_depth, skin_depth) for _ in range(4)]
-            self._align_corner_rects_with_parent_rect()
 
-    def move(self, x: int, y: int) -> 'HitBox':
-        """ NOTE: This is not creating a "moved" copy of the original HitBox object """
+    def move(self, x: int, y: int) -> 'HitBox':  # TODO: Do we need this method at all?
+        """
+        Move method of parent class rect, recognizes that one is subclassing it, but when generating a new
+        copy of the subclass it doesn't call the __init__. Therefore, we need to copy these values manually
+        """
         new_hitbox = super().move(x, y)
-        new_hitbox.impenetrable = self.impenetrable
-        new_hitbox.skin_depth = 0  # Do not copy skin information as this will make the
+        new_hitbox.impenetrable = self.solid
+        new_hitbox.skin_depth = 0  # Do not copy skin information as this will make the. TODO:????
         new_hitbox.corner_rects = None
         return new_hitbox  # noqa  C implementation of pygame.Rect is aware that we are subclassing
 

@@ -6,7 +6,7 @@ from yazelc.zesper import World
 
 class Task(ABC):
 
-    def run(self, world: World) -> Generator[None, None, None]:
+    def run(self, world: World) -> Generator:
         """ A simple generator that runs the task until is finished """
         while not self.is_finished(world):
             self.update(world)

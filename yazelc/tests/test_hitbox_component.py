@@ -3,7 +3,6 @@ import unittest
 import pygame
 
 pygame.init()
-pygame.freetype.init()
 
 from yazelc.components import HitBox
 

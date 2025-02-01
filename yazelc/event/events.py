@@ -58,12 +58,6 @@ class RestartEvent:
 
 
 @eventclass
-class CollisionEvent:
-    ent_1: int
-    ent_2: int
-
-
-@eventclass
 class HitDoorEvent:
     door_entity: int
     transversing_entity: int
