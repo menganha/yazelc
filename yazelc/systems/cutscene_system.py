@@ -37,6 +37,7 @@ class CutsceneSystem(zesper.Processor):
             self.coroutine_list.pop(task_list_id)
 
     def _get_coroutine(self, task_list: list[Task]) -> Generator:
+        # TODO: Check the example of cycle in itertools to see how can we have infinite cycle for a task list
         task_queue = deque(task_list)
         while task_queue:
             task = task_queue.popleft()

@@ -1,8 +1,8 @@
+from player import MAX_HEALTH
 from yazelc import items
 from yazelc import zesper
 from yazelc.components import Collectable, InteractorTag, Health, Animation, Renderable, Position, Velocity, TweenPosition
 from yazelc.event.events import CollectionEvent, HudUpdateEvent, DeleteEntityEvent
-from yazelc.player.player import MAX_HEALTH
 from yazelc.tween import TweenFunction
 from yazelc.utils.game_utils import Direction
 

@@ -6,17 +6,14 @@ pygame.init()
 import zesper
 from event.event_manager import EventManager, ButtonDownEvent, CloseWindowEvent, ButtonReleasedEvent
 
-from yazelc.config import Config
+from settings import Settings
 from yazelc.resource_manager import ResourceManager
 from yazelc.systems.render_system import RenderSystem
-from yazelc.systems.movement_system import MovementSystem, EndMovementEvent
+from yazelc.systems.kinetic_system import KineticSystem, EndMovementEvent
 from yazelc.systems.collision_system import CollisionSystem, EnterCollisionEvent, ExitCollisionEvent, SolidEnterCollisionEvent, SolidExitCollisionEvent, HitboxSquishedEvent
 from yazelc.components import Renderable, Position, HitBox, Move
 from yazelc.keyboard import Keyboard, Button
 from yazelc.utils.game_utils import IVec
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class Game:
@@ -24,20 +21,17 @@ class Game:
         self.is_running = True
         self.waiting_for_close_dialog = False
 
-        self.config = Config.load_from_json('../settings.json', window={'bgcolor': pygame.Color(255, 255, 255)})
-        self.resource_manager = ResourceManager()
+        self.config = Settings.load_from_json('../settings.json', window={'bgcolor': pygame.Color(255, 255, 255)})
+        self.resource_manager = ResourceManager('../../')
         self.event_manager = EventManager()
         self.world = zesper.World()
         self.controller = Keyboard()
         self.window = pygame.display.set_mode(self.config.window.resolution, pygame.SCALED, vsync=1)
 
-        movement_system = MovementSystem()
-        collision_system = CollisionSystem()
-        render_system = RenderSystem(self.window, self.config)
-
-        self.world.add_processor(movement_system)  # Order matters here
-        self.world.add_processor(collision_system)
-        self.world.add_processor(render_system)
+        movement_system = KineticSystem(self.world)
+        collision_system = CollisionSystem(self.world)
+        render_system = RenderSystem(self.window, self.config.window.bgcolor, self.world)
+        self.system_list = [movement_system, collision_system, render_system]
 
         image = pygame.Surface((16, 16))
         image.fill('red')
@@ -45,28 +39,27 @@ class Game:
         position = Position(0, 119)
         hitbox = HitBox(0, 0, 16, 16)
         self.character = self.world.create_entity(position, renderable, hitbox)
+
+        font = self.resource_manager.font('assets/font/Px437_Portfolio_6x8.ttf', pygame.Color('blue'), 8)
+        font_red = self.resource_manager.font('assets/font/Px437_Portfolio_6x8.ttf', pygame.Color('red'), 8)
         # Message box
-        font = self.resource_manager.font('Px437_Portfolio_6x8.ttf', pygame.Color('blue'), 8)
         msg = 'Collision Testing. Press Start to restart'
         surface = font.render(msg)
         self.world.create_entity(Renderable(surface), Position(0, 0))
 
         # Message box for collision notifications Solids
         self.solid_collision_entity: int | None = None
-        font = self.resource_manager.font('Px437_Portfolio_6x8.ttf', pygame.Color('red'), 8)
-        msg = 'Collided with Solid'
-        self.collision_msg_surface_solid = font.render(msg)
+        msg = 'Collided with Solid!'
+        self.collision_msg_surface_solid = font_red.render(msg)
 
         # Message box for collision notifications
         self.non_solid_collision_entity: int | None = None
-        font = self.resource_manager.font('Px437_Portfolio_6x8.ttf', pygame.Color('green'), 8)
-        msg = 'Colliding with non-Solid'
-        self.collision_msg_surface = font.render(msg)
+        msg = 'Colliding with non-Solid...'
+        self.collision_msg_surface = font_red.render(msg)
 
         # Squished message box
-        font = self.resource_manager.font('Px437_Portfolio_6x8.ttf', pygame.Color('red'), 8)
-        msg = 'Squished!!!'
-        self.squished_msg_surface = font.render(msg)
+        msg = 'You have been Squished!!!!'
+        self.squished_msg_surface = font_red.render(msg)
 
         # Wall
         image = pygame.Surface((20, 20))
@@ -128,7 +121,7 @@ class Game:
             self.restart()
 
     def restart(self):
-        self.event_manager.remove_all_handlers()
+        self.event_manager.remove_handlers()
         self.world.clear_database()
         self.__init__()
 
@@ -144,38 +137,40 @@ class Game:
             position.x = round(position.x)
             position.y = round(position.y)
 
-    def on_solid_enter_collision(self, collision_event: SolidEnterCollisionEvent):
+    def on_solid_enter_collision(self, _collision_event: SolidEnterCollisionEvent):
         if self.solid_collision_entity is None:
             self.solid_collision_entity = self.world.create_entity(
                 Renderable(self.collision_msg_surface_solid),
                 Position(0, 10)
             )
 
-    def on_solid_exit_collision(self, collision_event: SolidEnterCollisionEvent):
+    def on_solid_exit_collision(self, _collision_event: SolidEnterCollisionEvent):
         self.world.delete_entity(self.solid_collision_entity)
         self.solid_collision_entity = None
 
-    def on_enter_collision(self, collision_event: EnterCollisionEvent):
+    def on_enter_collision(self, _collision_event: EnterCollisionEvent):
         if self.non_solid_collision_entity is None:
             self.non_solid_collision_entity = self.world.create_entity(
                 Renderable(self.collision_msg_surface),
                 Position(0, 20)
             )
 
-    def on_exit_collision(self, collision_event: ExitCollisionEvent):
+    def on_exit_collision(self, _collision_event: ExitCollisionEvent):
         self.world.delete_entity(self.non_solid_collision_entity)
         self.non_solid_collision_entity = None
 
-    def on_window_closed(self, close_window_event: CloseWindowEvent):
+    def on_window_closed(self, _close_window_event: CloseWindowEvent):
         self.is_running = False
 
-    def on_squished(self, squished_event: HitboxSquishedEvent):
+    def on_squished(self, _squished_event: HitboxSquishedEvent):
         self.world.create_entity(Renderable(self.squished_msg_surface), Position(0, 20))
 
     def run(self):
         while self.is_running:
-            self.event_manager.process_all_events(self.controller, self.world)
+            self.event_manager.process_all_events(self.controller, self.system_list)
             self.world.process()
+            for processor in self.system_list:
+                processor.process()
         pygame.quit()
 
 

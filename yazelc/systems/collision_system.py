@@ -59,8 +59,9 @@ class CollisionSystem(zesper.Processor):
     collision
     """
 
-    def __init__(self):
+    def __init__(self, world: zesper.World):
         super().__init__()
+        self.world = world
         self.prev_collided_with_solid_entities: set[int] = set()
         self.prev_collided_with_non_solid_entities: set[tuple[int, int]] = set()
 
@@ -125,7 +126,7 @@ class CollisionSystem(zesper.Processor):
                 weight = ('l', 'r')
             else:
                 weight = ('t', 'b')
-            side = sorted(minimum_sides, key=lambda x: 0 if x in weight else 1)[0]
+            side = sorted(minimum_sides, key=lambda x_: 0 if x_ in weight else 1)[0]
         else:
             side = minimum_sides[0]
 
@@ -157,8 +158,8 @@ class CollisionSystem(zesper.Processor):
         #     dialog_trigger_event = DialogTriggerEvent(dialog_entity_id)
         #     self.event_queue.add(dialog_trigger_event)
         # elif component := self.world.try_signature(collision_event.ent_1, collision_event.ent_2, Collectable):
-        #     collectable_ent_id, collectable, colector_ent_id = component
-        #     collection_event = CollectionEvent(collectable_ent_id, collectable, colector_ent_id)
+        #     collectable_ent_id, collectable, collector_ent_id = component
+        #     collection_event = CollectionEvent(collectable_ent_id, collectable, collector_ent_id)
         #     self.event_queue.add(collection_event)
         # elif components := self.world.try_pair_signature(collision_event.ent_1, collision_event.ent_2, Health, Weapon):
         #     victim_id, _, attacker_id, _ = components

@@ -6,8 +6,9 @@ from yazelc.resource_manager import ResourceManager
 
 class AnimationSystem(zesper.Processor):
 
-    def __init__(self, resource_manager: ResourceManager):
+    def __init__(self, world: zesper.World, resource_manager: ResourceManager):
         super().__init__()
+        self.world = world
         self.resource_manager = resource_manager
 
     def process(self):

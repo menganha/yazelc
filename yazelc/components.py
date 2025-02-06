@@ -12,18 +12,21 @@ from yazelc.utils.game_utils import Direction, Status, IVec
 from yazelc.utils.timer import Timer
 
 
-class Position(pygame.Vector2):
+class Vec(pygame.Vector2):
+    pass
+
+
+class Position(Vec):
     """
-    Absolute position of the entity, i.e., not the one relative to the window unless the absolute
-    flag is on. This one is used for entities that should be on the screen no matter where the
-    camera is positioned
+    Absolute Position of the entity.
+    If "is_relative" is true, it means that is the position with respect to the camera
     """
 
-    def __init__(self, x: float = 0.0, y: float = 0.0, absolute: bool = False):
+    def __init__(self, x: float = 0.0, y: float = 0.0, is_relative: bool = False):
         super().__init__(x, y)
-        self.absolute = absolute
         self.prev_x: float = float(x)
         self.prev_y: float = float(y)
+        self.is_relative = is_relative
 
     def __setattr__(self, key, value):
         if key in ('x', 'y'):
@@ -31,27 +34,8 @@ class Position(pygame.Vector2):
             setattr(self, f'prev_{key}', old_value)
         super().__setattr__(key, value)
 
-    # def update(self, x: float | pygame.Vector2 | tuple[float, float] | list[float] = 0, y: float = 0, ) -> None:
-    #     self.prev_x = self.x
-    #     self.prev_y = self.y
-    #     super().update(x, y)
 
-    @classmethod
-    def on_screen_center(cls, surface: pygame.Surface, width: int, height: int, absolute: bool = False):
-        """ Returns the Position to which the surface is centered on the screen"""
-        return cls((width - surface.get_width()) // 2, (height - surface.get_height()) // 2, absolute)
-
-    @classmethod
-    def from_direction(cls, direction: Direction, length: float, absolute: bool = False):
-        ivec = direction.to_ivec(length)
-        return cls.from_ivec(ivec, absolute)
-
-    @classmethod
-    def from_ivec(cls, ivec: IVec, absolute: bool = False):
-        return cls(ivec.x, ivec.y, absolute)
-
-
-class Velocity(Position):
+class Velocity(Vec):
     ZERO_THRESHOLD = 1e-3
 
 
@@ -65,6 +49,7 @@ class Move:
     time_steps: int = -1
     vel_x: float = 0.0
     vel_y: float = 0.0
+
 
 @component
 class Sign:
@@ -166,6 +151,7 @@ class BlendEffect:
 @component
 class Health:
     points: int = 10
+    max_points: int = 10
     cooldown_time: InitVar[int] = 20
     cooldown_timer: Timer = field(init=False)  # frames of invincibility
 
@@ -184,59 +170,10 @@ class HitBox(pygame.Rect):
     hitboxes. These are used to implement the "soft corner collision" seen in games like Zelda: A Link to the Past.
     """
 
-    def __init__(self, x_pos: int, y_pos: int, width: int, height: int, solid: bool = False, skin_depth: int = 1,
-                 destroy_on_contact: bool = False):
+    def __init__(self, x_pos: int, y_pos: int, width: int, height: int, solid: bool = False, skin_depth: int = 1):
         super().__init__(x_pos, y_pos, width, height)
         self.solid = solid
         self.skin_depth = skin_depth
-        self.destroy_on_contact = destroy_on_contact
-
-    def move(self, x: int, y: int) -> 'HitBox':  # TODO: Do we need this method at all?
-        """
-        Move method of parent class rect, recognizes that one is subclassing it, but when generating a new
-        copy of the subclass it doesn't call the __init__. Therefore, we need to copy these values manually
-        """
-        new_hitbox = super().move(x, y)
-        new_hitbox.impenetrable = self.solid
-        new_hitbox.skin_depth = 0  # Do not copy skin information as this will make the. TODO:????
-        new_hitbox.corner_rects = None
-        return new_hitbox  # noqa  C implementation of pygame.Rect is aware that we are subclassing
-
-    def move_ip(self, x: int, y: int):
-        """ Move also the internal boxes """
-        super().move_ip(x, y)
-        for corner_r in self.corner_rects:
-            corner_r.move_ip(x, y)
-
-    def collides_with_corner_points(self, rect: pygame.Rect) -> int:
-        point_list = [
-            [sum(ele) for ele in zip(self.corner_rects[0].topright, (-1, -1))],
-            [sum(ele) for ele in zip(self.corner_rects[0].bottomleft, (-1, -1))],
-            [sum(ele) for ele in zip(self.corner_rects[1].topleft, (-1, 0))],
-            [sum(ele) for ele in zip(self.corner_rects[1].bottomright, (-1, 0))],
-            self.corner_rects[2].topright,
-            self.corner_rects[2].bottomleft,
-            [sum(ele) for ele in zip(self.corner_rects[3].topleft, (0, -1))],
-            self.corner_rects[3].bottomright,
-        ]
-        for point in point_list:
-            if rect.collidepoint(*point):
-                return True
-        else:
-            return False
-
-    def __setattr__(self, key, value):
-        if hasattr(self, 'corner_rects') and self.corner_rects:
-            super().__setattr__(key, value)
-            self._align_corner_rects_with_parent_rect()
-        else:
-            super().__setattr__(key, value)
-
-    def _align_corner_rects_with_parent_rect(self):
-        self.corner_rects[0].topleft = self.topleft  # Define them in counterclockwise direction starting from topleft
-        self.corner_rects[1].bottomleft = self.bottomleft
-        self.corner_rects[2].bottomright = self.bottomright
-        self.corner_rects[3].topright = self.topright
 
 
 @component

@@ -1,8 +1,8 @@
 import pygame
 
+from settings import Settings
 from yazelc import zesper
 from yazelc.components import Sign, Renderable, Position, TextBox
-from yazelc.config import Config
 from yazelc.controller import Button
 from yazelc.event.event_manager import ButtonDownEvent
 from yazelc.event.events import eventclass, SoundTriggerEvent, SoundEndEvent
@@ -23,9 +23,9 @@ class DialogMenuTriggerEvent:
 class DialogMenuSystem(zesper.Processor):
     """ Handles all text dialog (NPC and signs) and the context menus """
 
-
-    def __init__(self, config: Config, resource_manager: ResourceManager):
+    def __init__(self, config: Settings, world: zesper.World, resource_manager: ResourceManager):
         super().__init__()
+        self.world = world
         self.width = config.window.resolution.x
         self.height = config.text_box.height
         self.surface_depth = config.text_box.image_depth  # above everything else but below the pause menu
@@ -111,7 +111,7 @@ class DialogMenuSystem(zesper.Processor):
         sign = self.world.component_for_entity(dialog_trigger_event.sign_ent_id, Sign)
         self.world.add_component(text_box_entity_id, TextBox(sign.text))
         self.world.add_component(text_box_entity_id, Renderable(image=background, depth=self.surface_depth))
-        self.world.add_component(text_box_entity_id, Position(self.menu_pos_x, self.menu_pos_y, absolute=True))
+        self.world.add_component(text_box_entity_id, Position(self.menu_pos_x, self.menu_pos_y))
 
         self.event_queue.add(SoundTriggerEvent(self.scroll_sound_id))
 

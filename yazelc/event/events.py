@@ -93,9 +93,3 @@ class SoundEndEvent:
     id_str: str
 
 
-
-@eventclass
-class ChangeSceneEvent:
-    #  We define here a general string which could be also an Enum later on to label the scenes. We don't pass a reference
-    #  to an actual scene (e.g., BaseScene type) because we couple the system and end up with a circular import
-    next_scene: str

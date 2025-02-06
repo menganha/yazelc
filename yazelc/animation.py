@@ -17,10 +17,10 @@ class AnimationState(Enum):
 
 
 class AnimationDirection(Enum):
-    UP = 0
-    RIGHT = 1
-    DOWN = 2
-    LEFT = 3
+    DOWN = 0
+    LEFT = 1
+    UP = 2
+    RIGHT = 3
     NONE = 4
 
     @classmethod

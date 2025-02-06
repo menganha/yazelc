@@ -1,7 +1,7 @@
 import math
 
 from yazelc import zesper
-from yazelc.components import Position, HitBox, Move
+from yazelc.components import Position, HitBox, Move, Velocity, Acceleration
 from yazelc.event.events import eventclass
 
 
@@ -10,7 +10,11 @@ class EndMovementEvent:
     ent: int
 
 
-class MovementSystem(zesper.Processor):
+class KineticSystem(zesper.Processor):
+
+    def __init__(self, world: zesper.World):
+        super().__init__()
+        self.world = world
 
     def process(self):
         """
@@ -18,18 +22,19 @@ class MovementSystem(zesper.Processor):
         For accelerated entities it limits their minimal velocity.
         """
 
-        # for ent, (velocity, acceleration) in self.world.get_components(Velocity, Acceleration):
-        #     velocity.x = max(velocity.x + acceleration.x, Velocity.ZERO_THRESHOLD)
-        #     velocity.y = max(velocity.y + acceleration.x, Velocity.ZERO_THRESHOLD)
-        #
-        # for ent, (velocity, position) in self.world.get_components(Velocity, Position):
-        #     position.move_ip(velocity.x, velocity.y)
-        #
-        #     if hitbox := self.world.try_component(ent, HitBox):
-        #         hitbox.move_ip(round(position.x) - round(position.prev_x), round(position.y) - round(position.prev_y))
-        #
-        # # TODO: Make a limit here for movement outside the world bounds
+        for ent, (velocity, acceleration) in self.world.get_components(Velocity, Acceleration):
+            velocity.x = max(velocity.x + acceleration.x, Velocity.ZERO_THRESHOLD)
+            velocity.y = max(velocity.y + acceleration.x, Velocity.ZERO_THRESHOLD)
 
+        for ent, (velocity, position) in self.world.get_components(Velocity, Position):
+            position.x += velocity.x
+            position.y += velocity.y
+
+            if hitbox := self.world.try_component(ent, HitBox):
+                hitbox.x = round(position.x)
+                hitbox.y = round(position.y)
+
+        # TODO: Maybe this could be removed by the task in the cutscene system?
         for ent, (move, position) in self.world.get_components(Move, Position):
             hitbox = self.world.try_component(ent, HitBox)
             if move.time_steps == -1:

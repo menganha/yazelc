@@ -1,25 +1,25 @@
-"""
-Module deals with map data
-"""
 import json
 import logging
-import os.path
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Generator
 from xml.etree import ElementTree
 
 import pygame
 from pytmx import TiledTileLayer, TiledMap, util_pygame
 
+from components import HitBox
 from yazelc import components as cmp
 from yazelc.items import CollectableItemType
 from yazelc.resource_manager import ResourceManager
+from yazelc.utils.game_utils import IVec
+
+logger = logging.getLogger(__name__)
 
 
 class WorldMap:
     WORLD_MAP_SUFFIX = '.world'
 
-    def __init__(self, world_map_file_path: Path):
+    def __init__(self, world_map_file_path: str):
         self.file_path = world_map_file_path
         with open(self.file_path) as file:
             self._data = json.load(file)
@@ -41,19 +41,6 @@ class WorldMap:
                     image_paths.append(image_path)
         return image_paths
 
-    @staticmethod
-    def get_world_map_file_path(map_file_path: Path) -> Path:
-        list_world_map_files = list(map_file_path.parent.glob(f'*{WorldMap.WORLD_MAP_SUFFIX}'))
-        if len(list_world_map_files) != 1:
-            raise RuntimeError(f'None or more than one world file on the folder {map_file_path.parent}')
-        return list_world_map_files[0]
-
-    @classmethod
-    def from_map_file_path(cls, map_file_path: Path) -> 'WorldMap':
-        """ Derives from a map file (.tmx) the world map"""
-        world_map_file_path = cls.get_world_map_file_path(map_file_path)
-        return cls(world_map_file_path)
-
 
 class Map:
     """
@@ -64,7 +51,6 @@ class Map:
     A tile layer with the name "foreground" has n special meaning. No colliders will be instantiated for it, and it
     will generate it own image map that will be overlaid on top of all others. This is to show 3d depth by hiding
     the character in between these two layers, e.g., in between trees
-
     """
     DOOR_TARGET_X_STR = 'target_x'
     DOOR_TARGET_Y_STR = 'target_y'
@@ -78,51 +64,48 @@ class Map:
     FOREGROUND_LAYER_DEPTH = 1000
     GROUND_LEVEL_DEPTH = 0
 
-    def __init__(self, map_file_path: Path, resource_manager: ResourceManager):
+    def __init__(self, map_file_path: str, resource_manager: ResourceManager):
         self.map_file_path = map_file_path
         self.resource_manager = resource_manager
-        self.tmx_data = TiledMap(str(map_file_path), image_loader=self.yazelc_tiled_image_loader)
-        self.width = self.tmx_data.width * self.tmx_data.tilewidth
-        self.height = self.tmx_data.height * self.tmx_data.tileheight
+        self.tmx_data = TiledMap(map_file_path, image_loader=self._yazelc_tiled_image_loader)
+        self.size = IVec(self.tmx_data.width * self.tmx_data.tilewidth, self.tmx_data.height * self.tmx_data.tileheight)
 
-        self.layer_entities = []  # TODO: Maybe remove this away and put it in some other container
+        self.layer_entities = []  # TODO: remove these away and put it in some other container?
         self.object_entities = []
 
-    def get_map_images(self) -> list[tuple[int, pygame.Surface]]:
+    def get_map_images(self) -> Generator[tuple[pygame.Surface, int]]:
         """
-        Generate the current map surface. We usually have two: A background and a foreground that is drawn on
-        to of all the sprites
+        Generate the current map surface.
+        We have at most two surfaces: A background one and a foreground that is drawn on top of all the sprites
         """
-        map_width = self.tmx_data.width * self.tmx_data.tilewidth
-        map_height = self.tmx_data.height * self.tmx_data.tileheight
-
-        map_image = pygame.Surface((map_width, map_height), flags=pygame.SRCALPHA)
+        logger.debug(f'Loading layers from map {self.map_file_path}')
+        map_image = pygame.Surface(self.size, flags=pygame.SRCALPHA)
         for layer in self.tmx_data.layers:
             if layer.name == self.FOREGROUND_LAYER_NAME or not isinstance(layer, TiledTileLayer):
                 continue
+            logger.debug(f'Loading layer {layer.name} and blitting it to the background')
             for x, y, image, in layer.tiles():
                 map_image.blit(image, (x * self.tmx_data.tilewidth, y * self.tmx_data.tileheight))
 
+        yield map_image, self.GROUND_LEVEL_DEPTH
+
         if self.FOREGROUND_LAYER_NAME in map(lambda name: name.lower(), self.tmx_data.layernames):
-            map_foreground_image = pygame.Surface((map_width, map_height), flags=pygame.SRCALPHA)
+            map_foreground_image = pygame.Surface(self.size, flags=pygame.SRCALPHA)
             foreground_layer = self.tmx_data.get_layer_by_name(self.FOREGROUND_LAYER_NAME)
+            logger.debug(f'Loading layer {self.FOREGROUND_LAYER_NAME} and blitting it to the foreground')
             for x, y, image, in foreground_layer.tiles():
                 map_foreground_image.blit(image, (x * self.tmx_data.tilewidth, y * self.tmx_data.tileheight))
-            return [(self.GROUND_LEVEL_DEPTH, map_image), (self.FOREGROUND_LAYER_DEPTH, map_foreground_image)]
+            yield map_foreground_image, self.FOREGROUND_LAYER_DEPTH
         else:
-            logging.debug(
-                f'No foreground layer named {self.FOREGROUND_LAYER_NAME} found for the map {self.map_file_path}')
-            return [(self.GROUND_LEVEL_DEPTH, map_image)]
+            logger.debug(f'No foreground layer named {self.FOREGROUND_LAYER_NAME} was found')
 
-    def create_colliders(self) -> Iterator[tuple]:
+    def get_colliders(self) -> Iterator[HitBox]:
         """
-        Generates the static colliders of the map based on the "collider" property of the tileset. We ignore the
-        FOREGROUND layer collider.
+        Generates the static colliders of the map based on the "collider" property of the tileset.
+        We ignore the foreground layer collider.
         """
         for layer_no, layer in enumerate(self.tmx_data.layers):
-            if layer.name.lower() == self.FOREGROUND_LAYER_NAME:
-                continue
-            if isinstance(layer, TiledTileLayer):
+            if layer.name.lower() != self.FOREGROUND_LAYER_NAME and isinstance(layer, TiledTileLayer):
                 for x, y, _, in layer.tiles():
                     properties = self.tmx_data.get_tile_properties(x, y, layer_no)
                     if properties and 'colliders' in properties:
@@ -131,11 +114,11 @@ class Map:
                                              y * self.tmx_data.tileheight + collider.y, collider.width, collider.height,
                                              solid=True
                                              )
-                        yield (hit_box,)
+                        yield hit_box
 
-    def create_objects(self) -> Iterator[list]:
+    def get_objects(self) -> Iterator[list]:
         """
-        Create objects such as door, switches, chests, etc.
+        Create objects such as door, switches, chests, etc. from the tiled object layers
         """
         for obj in self.tmx_data.objects:
             components = []
@@ -157,7 +140,7 @@ class Map:
             # Mutually exclusive properties
             if self.TEXT_PROPERTY in obj.properties:
                 if obj.properties[self.TEXT_PROPERTY] is None:
-                    logging.error(f'Sign with id {obj.id} has no dialog')
+                    logger.error(f'Sign with id {obj.id} has no dialog')
                 dialog = cmp.Sign(obj.properties[self.TEXT_PROPERTY])
                 components.append(dialog)
 
@@ -166,7 +149,7 @@ class Map:
                 components.append(collectable)
 
             if not components:
-                logging.error(f'No parseable properties found for object with id {obj.id} and gid {obj.gid}')
+                logger.error(f'No parseable properties found for object with id {obj.id} and gid {obj.gid}')
 
             yield components
 
@@ -191,12 +174,12 @@ class Map:
         pos_y = tile_y_pos * self.tmx_data.tilewidth
         return pos_x, pos_y
 
-    def yazelc_tiled_image_loader(self, filename: str, color_key: Optional[util_pygame.ColorLike], **kwargs):
+    def _yazelc_tiled_image_loader(self, file_name: str, color_key: Optional[util_pygame.ColorLike], **kwargs):
         """
         pytmx image loader for pygame
 
         Parameters:
-            filename: filename, including path, to load
+            file_name: filename, including path, to load
             color_key: color_key for the image
 
         Returns:
@@ -207,9 +190,8 @@ class Map:
         if color_key:
             color_key = pygame.Color("#{0}".format(color_key))
 
-        pixelalpha = kwargs.get("pixelalpha", True)
-        basename_no_ext = os.path.splitext(os.path.basename(filename))[0]
-        image = self.resource_manager.get_texture(basename_no_ext)
+        pixel_alpha = kwargs.get("pixelalpha", True)
+        image = self.resource_manager.image(file_name)
 
         def load_image(rect=None, flags=None):
             if rect:
@@ -224,7 +206,7 @@ class Map:
             if flags:
                 tile = util_pygame.handle_transformation(tile, flags)
 
-            tile = util_pygame.smart_convert(tile, color_key, pixelalpha)
+            tile = util_pygame.smart_convert(tile, color_key, pixel_alpha)
             return tile
 
         return load_image

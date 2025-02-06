@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeVar, Optional, Union, Type, Iterator
+from abc import abstractmethod
+from typing import TypeVar, Optional, Union, Type
 
 import esper
 
@@ -48,28 +49,14 @@ class World(esper.World):
         else:
             return None
 
-    def remove_all_processors_except(self, *excluded_processor_types: Type[esper.Processor]) -> list[esper.Processor]:
-        """ No similar function on the esper Lib."""
-        processors_to_remove = [proc for proc in self._processors if type(proc) not in excluded_processor_types]
-        for processor in processors_to_remove:
-            self._processors.remove(processor)
-        return processors_to_remove
 
-    def get_all_processors(self) -> Iterator[Processor]:
-        """ Get all processors in current world """
-        for processor in self._processors:
-            yield processor
-
-    def clear_processors(self):
-        self._processors.clear()
-
-    def clear_database(self) -> None:
-        super().clear_database()
-        self.clear_processors()
-
-
-class Processor(esper.Processor):
-    world: World
-
+# TODO: Remove this class. It only supports the old way of doing things.  Better utilize the processor class defined in
+#  the base scene class
+class Processor:
     def __init__(self):
+        self.priority: int = 0
         self.event_queue = EventQueue()
+
+    @abstractmethod
+    def process(self):
+        pass

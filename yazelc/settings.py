@@ -1,5 +1,5 @@
 """
-Stores all the game immutable data, i.e., designed for static configuration settings at runtime.
+Stores all the game immutable data, i.e., designed for initializing all kinds of settings at runtime.
 """
 import json
 from typing import NamedTuple
@@ -9,10 +9,21 @@ import pygame
 from yazelc.utils.game_utils import IVec
 
 
+class PlayerConfig(NamedTuple):
+    velocity: float
+    velocity_diagonal: float
+    hitbox_size: IVec
+    hitbox_offset: IVec
+    skin_depth: int
+    animation: str
+    sprite_depth: int
+    interactive_range: IVec
+    weapon: dict  # TODO: Temporary: To be changed.
+
+
 class FontConfig(NamedTuple):
     name: str
     properties: dict
-
 
 class WindowConfig(NamedTuple):
     resolution: IVec
@@ -32,9 +43,10 @@ class TextBoxConfig(NamedTuple):
     scroll_sound: str
 
 
-class Config(NamedTuple):
+class Settings(NamedTuple):
     window: WindowConfig
     text_box: TextBoxConfig
+    player: PlayerConfig
 
     @classmethod
     def load_from_json(cls, path: str, **overwrites: dict):
@@ -50,14 +62,15 @@ class Config(NamedTuple):
 
         window_cfg = WindowConfig(**data_dictionary["window"])
         text_box_cfg = TextBoxConfig(**data_dictionary["text_box"])
+        player_cfg = PlayerConfig(**data_dictionary["player"])
 
-        return cls(window_cfg, text_box_cfg)
+        return cls(window_cfg, text_box_cfg, player_cfg)
 
     @staticmethod
     def _object_hook(json_object: dict):
         for key, value in json_object.items():
             if isinstance(value, list):
-                transformed = Config.transform_lists(key, value)
+                transformed = Settings.transform_lists(key, value)
                 json_object[key] = transformed
             elif key == "font":
                 json_object[key] = FontConfig(**value)
@@ -70,8 +83,6 @@ class Config(NamedTuple):
         Transforms recursively the lists in the json. If a list have two integer elements then it will return an immutable
         vector, i.e., IVec, if it has more than 3 then it will transform to a pygame.Color
         """
-        final_list = []
-        # for ele in element:
         if isinstance(element, list):
             if len(element) == 2 and all(map(lambda x: isinstance(x, int), element)):
                 value = IVec(*element)
@@ -80,7 +91,7 @@ class Config(NamedTuple):
             elif len(element) == 4 and all(map(lambda x: isinstance(x, int), element)):
                 value = pygame.Rect(*element)
             else:
-                value = tuple(Config.transform_lists(key, sub_ele) for sub_ele in element)
+                value = tuple(Settings.transform_lists(key, sub_ele) for sub_ele in element)
         else:
             value = element
         return value

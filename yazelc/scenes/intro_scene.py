@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pygame
 
-from yazelc import config as cfg
+import settings as cfg
 from yazelc.components import Renderable, Position, MenuType
 from yazelc.cutscene.fade_task import FadeInTask, FadeOutTask
 from yazelc.cutscene.move_task import MoveTask
@@ -10,11 +10,11 @@ from yazelc.cutscene.spawn_task import SpawnTask
 from yazelc.cutscene.wait_task import WaitTask
 from yazelc.event.events import ChangeSceneEvent
 from yazelc.menu import menu_box
-from yazelc.scenes.base_scene import BaseScene
 from yazelc.scenes.gameplay_scene import GameplayScene
+from yazelc.scenes.scene import BaseScene
 from yazelc.systems.cutscene_system import CutsceneSystem
 from yazelc.systems.dialog_menu_system import DialogMenuSystem
-from yazelc.systems.movement_system import MovementSystem
+from yazelc.systems.kinetic_system import KineticSystem
 from yazelc.systems.render_system import RenderSystem
 from yazelc.tween import TweenFunction
 from yazelc.utils.game_utils import IVec
@@ -29,7 +29,7 @@ FONT_COLOR = cfg.C_WHITE
 FONT_SIZE = 11
 TITLE_TEXT = 'A game by\nClimacus'
 
-INITIAL_MAP = Path('data', 'overworld', 'overworld_1.tmx')
+INITIAL_MAP = Path('data', 'overworld', 'overworld-x00-y00.tmx')
 INITIAL_MUSIC_PATH = Path('assets', 'music', 'Quantic_y_Los_Míticos_del_Ritmo-Hotline_Bling.ogg')
 INITIAL_POS = IVec(10, 24)
 
@@ -91,7 +91,7 @@ class IntroScene(BaseScene):
         self.world.add_processor(render_sys)
         self.world.add_processor(cutscene_sys)
         self.world.add_processor(dialog_sys)
-        self.world.add_processor(MovementSystem())
+        self.world.add_processor(KineticSystem())
 
         self.event_manager.subscribe_handler(dialog_sys)
 

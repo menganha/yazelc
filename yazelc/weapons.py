@@ -1,6 +1,6 @@
+from settings import C_RED
 from yazelc import zesper
 from yazelc.components import Renderable, Animation, Position, Weapon, HitBox
-from yazelc.config import C_RED
 from yazelc.event.events import BombExplosionEvent, ExplosionEvent
 
 BOMB_DAMAGE = 3

@@ -5,36 +5,41 @@ import pygame
 from yazelc import components as cmp
 from yazelc import zesper
 from yazelc.camera import Camera
-from yazelc.config import Config
 
 logger = logging.getLogger(__name__)
 
+
 class RenderSystem(zesper.Processor):
-    def __init__(self, window: pygame.Surface, config: Config, camera: Camera = None):
+    def __init__(self, window: pygame.Surface, bgcolor: pygame.Color, world: zesper.World, camera: Camera = None):
+        """ Renders to system """
         super().__init__()
-        self.camera = camera if camera else Camera(0, 0)
         self.window = window
-        self.bgcolor = config.window.bgcolor
+        self.bgcolor = bgcolor
+        self.world = world
+        self.camera = camera
+        self.debug = False
 
     def process(self):
         self.window.fill(self.bgcolor)
 
-        # Render sprites
-        camera_pos = self.camera.pos
-        for ent, (rend, pos) in sorted(self.world.get_components(cmp.Renderable, cmp.Position), key=lambda x: x[1][0].depth, reverse=False):
+        if self.camera:
+            self.camera.update(self.world)
 
-            if pos.absolute:
-                screen_pos = pos
+        for ent, (rend, pos) in sorted(self.world.get_components(cmp.Renderable, cmp.Position),
+                                       key=lambda x: x[1][0].depth, reverse=False
+                                       ):
+
+            if self.camera:
+                rel_pos = (round(pos.x - self.camera.position.x), round(pos.y - self.camera.position.y),
+                           self.camera.size.x, self.camera.size.y)
             else:
-                screen_pos = pos - camera_pos
+                rel_pos = round(pos.x), round(pos.y)
 
+            # Blending effects
             if blend := self.world.try_component(ent, cmp.BlendEffect):
                 new_image = rend.image.copy()
                 block = pygame.Surface(rend.image.get_size()).convert_alpha()
-                if blend.timer.module(blend.blink_interval):
-                    color = cfg.C_LIGHT_RED
-                else:
-                    color = cfg.C_LIGHT_BLUE
+                color = pygame.Color('pink') if blend.timer.module(blend.blink_interval) else pygame.Color('lightblue')
                 block.fill(color)
                 new_image.blit(block, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
                 new_image.blit(new_image, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
@@ -42,24 +47,25 @@ class RenderSystem(zesper.Processor):
                 blend.timer.tick()
                 if blend.timer.has_finished():
                     self.world.remove_component(ent, cmp.BlendEffect)
-
                 img = new_image
             else:
                 img = rend.image
 
-            rounded_x, rounded_y = round(screen_pos.x), round(screen_pos.y)
-            self.window.blit(img, (rounded_x, rounded_y))
+            # Render to the window
+            self.window.blit(img, rel_pos)
 
-        # TODO: They can be on the the same loop if the position has the absolute flag on
+            # On debug mode render all hitboxes
+            if self.debug:
+                if hitbox := self.world.try_component(ent, cmp.HitBox):
+                    hb_surface = pygame.Surface((hitbox.w, hitbox.h), flags=pygame.SRCALPHA)
+                    hb_surface.fill(pygame.Color('seashell'))
+                    rel_pos_hb = round(hitbox.x - self.camera.position.x), round(hitbox.y - self.camera.position.y)
+                    self.window.blit(hb_surface, rel_pos_hb)
+
         # Render native shapes which are (normally) associated with particle effects
+        # TODO: They can be on the the same loop if the position has the absolute flag on
         for ent, (vfx, pos) in self.world.get_components(cmp.Particle, cmp.Position):
-            rect = pygame.Rect(round(pos.x - camera_pos.x), round(pos.y - camera_pos.y), 1, 1)
+            rect = pygame.Rect(round(pos.x), round(pos.y), 1, 1)
             pygame.draw.rect(self.window, vfx.color, rect)
-
-        # if cfg.DEBUG_MODE:  # On debug mode then render all hitboxes
-        #     for ent, (hitbox) in self.world.get_component(cmp.HitBox):
-        #         hb_surface = pygame.Surface((hitbox.w, hitbox.h), flags=pygame.SRCALPHA)
-        #         hb_surface.fill(cfg.C_TRANSPARENT_BLUE)
-        #         self.window.blit(hb_surface, (hitbox.x - round(camera_pos.x), hitbox.y - round(camera_pos.y)))
 
         pygame.display.flip()

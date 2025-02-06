@@ -1,8 +1,8 @@
+import player
 from yazelc import zesper
 from yazelc.controller import Button
 from yazelc.event.events import InputEvent, BlockInputEvent, PauseEvent
 from yazelc.menu import menu_box
-from yazelc.player import player
 from yazelc.utils.timer import Timer
 
 

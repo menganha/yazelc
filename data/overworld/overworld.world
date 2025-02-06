@@ -1,20 +1,15 @@
 {
-    "maps": [
+    "patterns": [
         {
-            "fileName": "overworld_1.tmx",
-            "height": 512,
-            "width": 512,
-            "x": 0,
-            "y": 0
-        },
-        {
-            "fileName": "overworld_2.tmx",
-            "height": 512,
-            "width": 512,
-            "x": 512,
-            "y": 0
+            "regexp": "overworld-x0*(\\d+)-y0*(\\d+)\\.tmx",
+            "multiplierX": 512,
+            "multiplierY": 512,
+            "offsetX": 0,
+            "offsetY": 0
         }
     ],
     "onlyShowAdjacentMaps": false,
-    "type": "world"
+    "type": "world",
+    "music": "Quantic_y_Los_Míticos_del_Ritmo-Hotline_Bling.ogg",
+    "initial_position": [1, 2]
 }

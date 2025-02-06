@@ -1,6 +1,8 @@
 import abc
 from enum import Enum, auto
 
+from yazelc.event.events import eventclass
+
 
 class Button(Enum):
     """ Buttons on the controller. These are the only inputs the game will recognize """
@@ -37,3 +39,18 @@ class Controller(abc.ABC):
     @abc.abstractmethod
     def is_button_released(self, button: Button) -> bool:
         pass
+
+
+@eventclass
+class ButtonDownEvent:
+    button: Button
+
+
+@eventclass
+class ButtonPressedEvent:
+    button: Button
+
+
+@eventclass
+class ButtonReleasedEvent:
+    button: Button

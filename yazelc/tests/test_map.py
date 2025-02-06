@@ -11,7 +11,7 @@ from pathlib import Path
 
 class TestMap(unittest.TestCase):
     TEST_WORLD = Path('../../data/overworld/overworld.world')
-    TEST_MAP = Path('../../data/overworld/overworld_1.tmx')
+    TEST_MAP = Path('../../data/overworld/overworld-x00-y00.tmx')
 
     def setUp(self) -> None:
         self.world_map = WorldMap(self.TEST_WORLD)

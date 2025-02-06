@@ -43,16 +43,16 @@ class TestEvent(unittest.TestCase):
         self.event_manager.subscribe(MockCollisionEvent, self.instance_with_reference.on_death)
 
     def test_remove_one_handlers(self):
-        self.event_manager.remove_handler(MockDeathEvent, self.instance_with_reference.on_death)
+        self.event_manager.remove_handlers_for_instance(MockDeathEvent, self.instance_with_reference.on_death)
         self.assertTrue(MockDeathEvent not in self.event_manager.subscribers)
         self.assertTrue(MockCollisionEvent in self.event_manager.subscribers)
 
     def test_remove_all_handlers(self):
-        self.event_manager.remove_all_handlers()
+        self.event_manager.remove_handlers()
         self.assertFalse(self.event_manager.subscribers)
 
     def test_remove_all_handlers_of_one_event_type(self):
-        self.event_manager.remove_all_handlers(MockCollisionEvent)
+        self.event_manager.remove_handlers(MockCollisionEvent)
         self.assertFalse(self.event_manager.subscribers[MockCollisionEvent])
         self.assertTrue(self.event_manager.subscribers[MockDeathEvent])
 

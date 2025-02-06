@@ -2,7 +2,6 @@ from random import choice, random
 
 import pygame
 
-from yazelc import config
 from yazelc import zesper
 from yazelc.components import Brain, State, Velocity, Animation, Enemy, Position, Weapon, HitBox, Renderable
 from yazelc.event.events import EnemyDecisionEvent

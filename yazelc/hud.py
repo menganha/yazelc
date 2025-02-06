@@ -1,9 +1,9 @@
 import pygame
 
-from yazelc import config as cfg
+import player
+import settings as cfg
 from yazelc import zesper
 from yazelc.components import Renderable, Position
-from yazelc.player import player
 from yazelc.utils.game_utils import IVec
 
 WHOLE_HEART_HEALTH_POINTS = 2

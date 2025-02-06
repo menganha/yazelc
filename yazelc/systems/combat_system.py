@@ -1,7 +1,7 @@
 import logging
 
+import settings as cfg
 from yazelc import components as cmp
-from yazelc import config as cfg
 from yazelc import weapons
 from yazelc import zesper
 from yazelc.event.events import DeathEvent, HudUpdateEvent, BombExplosionEvent, DamageEvent, ExplosionEvent, DeleteEntityEvent, BlockInputEvent, SoundTriggerEvent

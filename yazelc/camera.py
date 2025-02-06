@@ -1,46 +1,48 @@
-from yazelc import config as cfg
+import logging
+
 from yazelc import zesper
 from yazelc.components import Position, Renderable
+from yazelc.utils.game_utils import IVec
 
+logger = logging.getLogger(__name__)
 
-# TODO: Adds methods to change smoothly the camera from one position to the other
-# TODO: This class may be used migrated to the CameraSystem instead
 
 class Camera:
-    """ Max dimensions refer where to the bound where the camera should not go beyond """
+    """
+    Renders only what is within the camera border and follows selected entity
+    Updates the camera entity to center around the input entity position
+    """
 
-    def __init__(self, x_pos: int, y_pos: int, max_x: int = 100, max_y: int = 100):
-        self.pos = Position(x_pos, y_pos)
-        self.max_pos = Position(max_x, max_y)
-        self.offset = Position(max_x, max_y)
+    def __init__(self, size: IVec, world_size: IVec):
+        self.size = size
+        self.world_size = world_size
+
+        self.position = Position()
+        self.offset = IVec(0, 0)
         self.ent_id_to_track = None
 
     def update(self, world: zesper.World):
         if self.ent_id_to_track:
             entity_followed_pos = world.component_for_entity(self.ent_id_to_track, Position)
 
-            self.pos = entity_followed_pos - self.offset
+            self.position.x = entity_followed_pos.x - self.offset.x
+            self.position.y = entity_followed_pos.y - self.offset.y
 
-            self.pos.x = max(0, self.pos.x)
-            self.pos.y = max(0, self.pos.y)
-            self.pos.x = min(self.max_pos.x - cfg.RESOLUTION.x, self.pos.x)
-            self.pos.y = min(self.max_pos.y - cfg.RESOLUTION.y, self.pos.y)
+            # Never leave to areas left of above the origin
+            self.position.x = max(0.0, self.position.x)
+            self.position.y = max(0.0, self.position.y)
+            # Never leave to areas right of below the maximum size of the world
+            self.position.x = min(float(self.world_size.x - self.size.x), self.position.x)
+            self.position.y = min(float(self.world_size.y - self.size.y), self.position.y)
 
-    def track_entity(self, ent_id: int, world: zesper.World):
-        self.ent_id_to_track = ent_id
-        self.offset = self._get_position_of_entity_to_track(ent_id, world)
-
-    @staticmethod
-    def _get_position_of_entity_to_track(entity_id_to_follow: int, world: zesper.World) -> Position:
+    def track_entity(self, target_entity_id: int, world: zesper.World):
         """
-        Used to get the relative position of the entity to track with respect to the camera
-
-        If the tracked entity has a renderable (image) then get the center of that image, otherwise get the position of
-        that entity, and if it doesn't have any of the previous two components then return 0,0, i.e., just get a fixed camera
+        Sets the offset of the entity to track to be in the center of the camera.
+        If target entity has a renderable then center around that, otherwise center around the position
         """
-        if renderable := world.try_component(entity_id_to_follow, Renderable):
-            return Position(int((cfg.RESOLUTION.x - renderable.width) / 2), int((cfg.RESOLUTION.y - renderable.height) / 2))
-        elif position := world.try_component(entity_id_to_follow, Position):
-            return Position(int((cfg.RESOLUTION.x - position.x) / 2), int((cfg.RESOLUTION.y - position.y) / 2))
-        else:
-            return Position(0, 0)
+        self.ent_id_to_track = target_entity_id
+
+        if renderable := world.try_component(target_entity_id, Renderable):
+            self.offset = IVec(int((self.size.x - renderable.width) / 2), int((self.size.y - renderable.height) / 2))
+        elif position := world.try_component(target_entity_id, Position):
+            self.offset = IVec(int((self.size.x - position.x) / 2), int((self.size.y - position.y) / 2))

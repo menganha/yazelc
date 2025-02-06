@@ -1,7 +1,7 @@
 import pygame
 
+import settings as cfg
 from yazelc import components as cmp
-from yazelc import config as cfg
 from yazelc import zesper
 from yazelc.controller import Button
 from yazelc.event.events import ChangeSceneEvent

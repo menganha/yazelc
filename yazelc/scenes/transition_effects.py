@@ -8,11 +8,10 @@ from typing import TYPE_CHECKING
 
 import pygame
 
+import settings as cfg
 import yazelc.components as cmp
-import yazelc.config as cfg
 from yazelc import zesper
 from yazelc.camera import Camera
-from yazelc.systems.camera_system import CameraSystem
 from yazelc.systems.collision_system import CollisionSystem
 from yazelc.systems.player_input_system import PlayerInputSystem
 

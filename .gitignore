@@ -6,4 +6,6 @@ assets
 .run
 *.tiled-project
 *.tiled-session
+*.log
+*.save
 profile_results
