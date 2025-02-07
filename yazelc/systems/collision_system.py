@@ -78,8 +78,8 @@ class CollisionSystem(zesper.Processor):
                     self.event_queue.add(SolidEnterCollisionEvent(ent_s, ent))
                     collided_with_solid.append((hb_s, hb, ent, self.area_of_clip(hb_s, hb)))
 
-        for hb_s, hb, ent, _ in sorted(collided_with_solid, key=lambda x: x[-1], reverse=True
-                                       ):  # Resolve first the collisions with bigger overlaps
+        # Resolve first the collisions with bigger overlaps
+        for hb_s, hb, ent, _ in sorted(collided_with_solid, key=lambda x: x[-1], reverse=True):
             self.collision_resolution(hb_s, hb, ent)
 
         collided_with_solid_set = {ent for _, _, ent, _ in collided_with_solid}

@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pygame
-
 import settings as cfg
+
 from yazelc.components import Renderable, Position, MenuType
 from yazelc.cutscene.fade_task import FadeInTask, FadeOutTask
 from yazelc.cutscene.move_task import MoveTask
@@ -36,7 +36,7 @@ INITIAL_POS = IVec(10, 24)
 
 class IntroScene(BaseScene):
 
-    def on_enter(self):
+    def on_init(self):
         # load resources
         pg_logo_surface = self.world.resource_manager.load_image(PG_LOGO)
         pg_logo_surface.set_alpha(0)

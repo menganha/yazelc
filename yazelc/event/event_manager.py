@@ -45,7 +45,8 @@ class EventManager:
             for button in Button:
                 if controller.is_button_down(button):
                     self.trigger_event(ButtonDownEvent(button))
-                elif controller.is_button_pressed(button):
+
+                if controller.is_button_pressed(button):
                     self.trigger_event(ButtonPressedEvent(button))
                 elif controller.is_button_released(button):
                     self.trigger_event(ButtonReleasedEvent(button))

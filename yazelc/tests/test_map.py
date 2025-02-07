@@ -3,7 +3,7 @@ import unittest
 import pygame
 
 pygame.init()
-pygame.freetype.init()
+pygame.freetype.on_init()
 
 from yazelc.map import WorldMap
 from pathlib import Path

@@ -7,7 +7,7 @@ from yazelc.event.event_manager import EventManager, ButtonDownEvent, CloseWindo
 
 from yazelc.settings import Settings
 from yazelc.resource_manager import ResourceManager
-from yazelc.systems.dialog_menu_system import DialogMenuSystem, DialogMenuExitEvent, DialogMenuTriggerEvent
+from yazelc.systems.dialog_menu_system import DialogMenuSystem, DialogMenuExitEvent, DialogTriggerEvent
 from yazelc.systems.render_system import RenderSystem
 from yazelc.components import Sign, Renderable, Position
 from yazelc.keyboard import Keyboard, Button
@@ -48,12 +48,12 @@ class Game:
 
         self.event_manager.subscribe(ButtonDownEvent, self.on_button_down, dialog_menu_system.on_input)
         self.event_manager.subscribe(DialogMenuExitEvent, self.on_dialog_exit)
-        self.event_manager.subscribe(DialogMenuTriggerEvent, dialog_menu_system.on_dialog_trigger)
+        self.event_manager.subscribe(DialogTriggerEvent, dialog_menu_system.on_dialog_trigger)
         self.event_manager.subscribe(CloseWindowEvent, self.on_window_closed)
 
     def on_button_down(self, button_event: ButtonDownEvent):
         if button_event.button == Button.LEFT and not self.waiting_for_close_dialog:
-            self.event_manager.trigger_event(DialogMenuTriggerEvent(self.sign_ent_id))
+            self.event_manager.trigger_event(DialogTriggerEvent(self.sign_ent_id))
             self.waiting_for_close_dialog = True
 
     def on_window_closed(self, _close_window_event: CloseWindowEvent):

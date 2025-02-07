@@ -66,7 +66,7 @@ PROCESSOR_PRIORITY = {system: idx + 1 for idx, system in enumerate(reversed(
 
 class GameplayScene(BaseScene):
 
-    def on_enter(self):
+    def on_init(self):
 
         self._load_resources()
         self._generate_map()
@@ -187,7 +187,7 @@ class GameplayScene(BaseScene):
         """
         Generates the map with all the relevant data, e.g., items, enemies, triggers, etc.
         """
-        map_file_path = self.resource_manager.get_matching_path(self.save['current_map'])
+        map_file_path = self.resource_manager.get_matching_path(self.save_state['current_map'])
         self.map = Map(map_file_path, self.resource_manager)
 
         for map_layer, depth in self.map.get_map_images():

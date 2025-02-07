@@ -36,7 +36,7 @@ class RenderSystem(zesper.Processor):
             else:
                 rel_pos = round(pos.x), round(pos.y)
 
-            # Blending effects
+            # Blending effects.
             if blend := self.world.try_component(ent, cmp.BlendEffect):
                 new_image = rend.image.copy()
                 block = pygame.Surface(rend.image.get_size()).convert_alpha()

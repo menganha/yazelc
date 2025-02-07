@@ -2,7 +2,6 @@ import abc
 
 import pygame
 
-from yazelc import save
 from yazelc import zesper
 from yazelc.controller import Controller
 from yazelc.event.event_manager import EventManager
@@ -22,21 +21,18 @@ class SceneState:
 class BaseScene(abc.ABC):
     """ Base implementation for all scenes  """
 
-    def __init__(self, window: pygame.Surface, controller: Controller, settings: Settings, save_file: str = None):
+    def __init__(self, window: pygame.Surface, controller: Controller, settings: Settings, save_state: PlayerState):
         self.window: pygame.Surface = window
         self.controller: Controller = controller
         self.scene_state = SceneState()
         self.settings: Settings = settings
-        if save_file:
-            self.save = save.load_state(save_file)
-        else:
-            self.save = PlayerState()
+        self.save_state: PlayerState = save_state
 
         self.finished: bool = False
         self.next_scene: BaseScene | None = None
 
     @abc.abstractmethod
-    def on_enter(self):
+    def on_init(self):
         pass
 
     def update(self):

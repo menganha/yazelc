@@ -3,9 +3,11 @@ from dataclasses import dataclass, field
 
 from yazelc import components as cmp
 from yazelc.animation import EntityState, EntityDirection
-from yazelc.controller import Button, ButtonDownEvent, ButtonReleasedEvent
+from yazelc.controller import Button, ButtonDownEvent, ButtonReleasedEvent, ButtonPressedEvent
 from yazelc.resource_manager import ResourceManager
 from yazelc.settings import PlayerConfig
+from yazelc.systems.collision_system import SolidEnterCollisionEvent
+from yazelc.systems.dialog_menu_system import DialogTriggerEvent
 from yazelc.zesper import World, Processor
 
 logger = logging.getLogger(__name__)
@@ -55,6 +57,7 @@ class PlayerSystem(Processor):
         self.velocity = cmp.Vec()
         self.direction = EntityDirection.DOWN
         self.directional_key_released = True  # To aid in the check of a direction change
+        self.interaction_box_entity = self.world.create_entity()
 
     def process(self):
         """ Normalizes velocity, moves and handles animation """
@@ -124,23 +127,25 @@ class PlayerSystem(Processor):
             self.velocity.y += self.player_config.velocity
         elif button_event.button == Button.UP:
             self.velocity.y -= self.player_config.velocity
-        elif button_event.button == Button.A:
+
+    def on_button_pressed(self, button_event: ButtonPressedEvent):
+        if button_event.button == Button.A:
             # Create an interaction box
-            hitbox = self.world.component_for_entity(self.player_entity, cmp.HitBox)
-            interaction_box = cmp.HitBox(0, 0, 4, 5)
+            player_hitbox = self.world.component_for_entity(self.player_entity, cmp.HitBox)
+            hitbox = cmp.HitBox(0, 0, 4, 5)  # TODO: Remove this magic numbers
             if self.direction == EntityDirection.UP:
-                interaction_box.bottom = hitbox.top
-                interaction_box.centerx = hitbox.centerx - 2
+                hitbox.bottom = player_hitbox.top
+                hitbox.centerx = player_hitbox.centerx
             elif self.direction == EntityDirection.LEFT:
-                interaction_box.right = hitbox.left
-                interaction_box.centery = hitbox.centery - 2
+                hitbox.right = player_hitbox.left
+                hitbox.centery = player_hitbox.centery
             elif self.direction == EntityDirection.RIGHT:
-                interaction_box.left = hitbox.right
-                interaction_box.centery = hitbox.centery - 2
+                hitbox.left = player_hitbox.right
+                hitbox.centery = player_hitbox.centery
             elif self.direction == EntityDirection.DOWN:
-                interaction_box.top = hitbox.bottom
-                interaction_box.centerx = hitbox.centerx - 2
-            self.world.create_entity(interaction_box)
+                hitbox.top = player_hitbox.bottom
+                hitbox.centerx = player_hitbox.centerx
+            self.world.add_component(self.interaction_box_entity, hitbox)
 
     def on_button_released(self, button_event: ButtonReleasedEvent):
         position = self.world.component_for_entity(self.player_entity, cmp.Position)
@@ -150,3 +155,8 @@ class PlayerSystem(Processor):
         elif button_event.button == Button.UP or button_event.button == button_event.button.DOWN:
             position.y = round(position.y)
             self.directional_key_released = True
+
+    def on_solid_collision(self, collision_event: SolidEnterCollisionEvent):
+        if collision_event.ent == self.interaction_box_entity and self.world.try_component(collision_event.ent_solid, cmp.Sign):
+            self.event_queue.add(DialogTriggerEvent(collision_event.ent_solid))
+            self.world.remove_component(self.interaction_box_entity, cmp.HitBox)
