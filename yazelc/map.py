@@ -7,8 +7,8 @@ from xml.etree import ElementTree
 import pygame
 from pytmx import TiledTileLayer, TiledMap, util_pygame
 
-from components import HitBox
 from yazelc import components as cmp
+from yazelc.components import HitBox
 from yazelc.items import CollectableItemType
 from yazelc.resource_manager import ResourceManager
 from yazelc.utils.game_utils import IVec
@@ -69,7 +69,10 @@ class Map:
         self.resource_manager = resource_manager
         self.tmx_data = TiledMap(map_file_path, image_loader=self._yazelc_tiled_image_loader)
         self.size = IVec(self.tmx_data.width * self.tmx_data.tilewidth, self.tmx_data.height * self.tmx_data.tileheight)
-
+        self.start_pos = IVec(
+            self.tmx_data.tilewidth * self.tmx_data.properties['start_x'],
+            self.tmx_data.tileheight * self.tmx_data.properties['start_y']
+        )
         self.layer_entities = []  # TODO: remove these away and put it in some other container?
         self.object_entities = []
 
@@ -149,7 +152,7 @@ class Map:
                 components.append(collectable)
 
             if not components:
-                logger.error(f'No parseable properties found for object with id {obj.id} and gid {obj.gid}')
+                logger.error(f'No parseable properties found for object with id {obj.id} and properties {obj.properties}')
 
             yield components
 

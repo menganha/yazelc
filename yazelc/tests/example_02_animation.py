@@ -12,7 +12,7 @@ from yazelc.systems.render_system import RenderSystem
 from yazelc.systems.animation_system import AnimationSystem
 from yazelc.components import Animation, Renderable, Position
 from yazelc.keyboard import Keyboard, Button
-from yazelc.animation import AnimationState, AnimationDirection
+from yazelc.animation import EntityState, EntityDirection
 
 
 class Game:
@@ -33,7 +33,7 @@ class Game:
         animation_system = AnimationSystem(self.world, self.resource_manager)
         self.system_list = [render_system, animation_system]
 
-        start_sequence = self.animation_data.get_sequence(AnimationState.WALKING, AnimationDirection.DOWN)
+        start_sequence = self.animation_data.get_sequence(EntityState.MOVING, EntityDirection.DOWN)
         start_image = self.resource_manager.image(start_sequence.get_image_id(0))
         position = Position(self.config.window.resolution.x // 2, self.config.window.resolution.y // 2)
         self.character = self.world.create_entity(position, Renderable(start_image), Animation(start_sequence))
@@ -50,16 +50,16 @@ class Game:
 
     def on_button_down(self, button_event: ButtonDownEvent):
         if button_event.button == Button.LEFT:
-            sequence = self.animation_data.get_sequence(AnimationState.WALKING, AnimationDirection.LEFT)
+            sequence = self.animation_data.get_sequence(EntityState.MOVING, EntityDirection.LEFT)
             self.world.add_component(self.character, Animation(sequence))
         if button_event.button == Button.RIGHT:
-            sequence = self.animation_data.get_sequence(AnimationState.WALKING, AnimationDirection.RIGHT)
+            sequence = self.animation_data.get_sequence(EntityState.MOVING, EntityDirection.RIGHT)
             self.world.add_component(self.character, Animation(sequence))
         if button_event.button == Button.DOWN:
-            sequence = self.animation_data.get_sequence(AnimationState.WALKING, AnimationDirection.DOWN)
+            sequence = self.animation_data.get_sequence(EntityState.MOVING, EntityDirection.DOWN)
             self.world.add_component(self.character, Animation(sequence))
         if button_event.button == Button.UP:
-            sequence = self.animation_data.get_sequence(AnimationState.WALKING, AnimationDirection.UP)
+            sequence = self.animation_data.get_sequence(EntityState.MOVING, EntityDirection.UP)
             self.world.add_component(self.character, Animation(sequence))
 
     def on_window_closed(self, _close_window_event: CloseWindowEvent):

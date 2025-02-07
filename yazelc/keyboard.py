@@ -18,7 +18,8 @@ class Keyboard(Controller):
         Button.UP: pygame.K_UP,
         Button.DOWN: pygame.K_DOWN,
         Button.LEFT: pygame.K_LEFT,
-        Button.RIGHT: pygame.K_RIGHT
+        Button.RIGHT: pygame.K_RIGHT,
+        Button.DEBUG: pygame.K_F1
     }
 
     def __init__(self):

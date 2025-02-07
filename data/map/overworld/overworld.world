@@ -1,0 +1,11 @@
+{
+    "onlyShowAdjacentMaps": false,
+    "patterns": [
+        {
+            "multiplierX": 512,
+            "multiplierY": 512,
+            "regexp": "overworld-x0*(\\d+)-y0*(\\d+)\\.tmx"
+        }
+    ],
+    "type": "world"
+}

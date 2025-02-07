@@ -1,9 +1,9 @@
 from math import copysign
 from pathlib import Path
 
+import player
 import pygame
 
-import player
 from yazelc import components as cmp
 from yazelc import enemy
 from yazelc import hud
@@ -187,7 +187,7 @@ class GameplayScene(BaseScene):
         """
         Generates the map with all the relevant data, e.g., items, enemies, triggers, etc.
         """
-        map_file_path = self.resource_manager.get_matching_path(self.state['current_map'])
+        map_file_path = self.resource_manager.get_matching_path(self.save['current_map'])
         self.map = Map(map_file_path, self.resource_manager)
 
         for map_layer, depth in self.map.get_map_images():

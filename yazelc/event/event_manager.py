@@ -105,7 +105,7 @@ class EventManager:
         def callback(weak_ref_function):
             logger.info(
                 f'Function {weak_ref_function} is about to be garbage collected. '
-                f'Removing from the handlers list of the vent manager for even {event_name}'
+                f'Removing from the handlers list of the event manager for event "{event_name}"'
             )
             self.subscribers[event_name].remove(weak_ref_function)
             if not self.subscribers[event_name]:

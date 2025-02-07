@@ -2,15 +2,15 @@
     "sprite_sheet": "assets/sprites/player/pink_hair.png",
     "sprite_size": [16, 16],
     "sequences": {
-        "walking_down": {
+        "moving_down": {
             "frames": [[0, 0, 7], [0, 1, 7], [0, 2, 7], [0, 3, 7]],
             "repeat": true
         },
-        "walking_right": {
+        "moving_right": {
             "frames": [[1, 0, 7], [1, 1, 7], [1, 2, 7], [1, 3, 7]],
             "repeat": true
         },
-        "walking_up": {
+        "moving_up": {
             "frames": [[2, 0, 7], [2, 1, 7], [2, 2, 7], [2, 3, 7]],
             "repeat": true
         }

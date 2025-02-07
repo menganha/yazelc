@@ -1,12 +1,12 @@
 import pygame
 
-from settings import Settings
 from yazelc import zesper
 from yazelc.components import Sign, Renderable, Position, TextBox
 from yazelc.controller import Button
 from yazelc.event.event_manager import ButtonDownEvent
 from yazelc.event.events import eventclass, SoundTriggerEvent, SoundEndEvent
 from yazelc.resource_manager import ResourceManager
+from yazelc.settings import Settings
 from yazelc.utils.game_utils import IVec
 
 

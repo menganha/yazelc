@@ -7,11 +7,12 @@
         "velocity": 1.4999999999,
         "velocity_diagonal": 1,
         "hitbox_size": [10, 10],
-        "hitbox_offset": [0, 2],
-        "skin_depth": 5,
+        "hitbox_offset": [3, 3],
+        "skin_depth": 4,
         "animation": "data/animation/player.json",
         "sprite_depth": 200,
         "interactive_range": [10, 2],
+        "prefer_up_down_animation": false,
         "weapon": {
             "sword": {
                 "range": [12, 24],

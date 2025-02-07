@@ -21,6 +21,7 @@ class KineticSystem(zesper.Processor):
         Moves all entities with positions. If it has a Hitbox component then updates their internal position as well.
         For accelerated entities it limits their minimal velocity.
         """
+        # TODO: Add support for offsets !!!
 
         for ent, (velocity, acceleration) in self.world.get_components(Velocity, Acceleration):
             velocity.x = max(velocity.x + acceleration.x, Velocity.ZERO_THRESHOLD)

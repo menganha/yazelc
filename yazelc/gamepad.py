@@ -36,7 +36,8 @@ class Gamepad(Controller):
         Button.UP: GamepadButton.UP,
         Button.DOWN: GamepadButton.DOWN,
         Button.LEFT: GamepadButton.LEFT,
-        Button.RIGHT: GamepadButton.RIGHT
+        Button.RIGHT: GamepadButton.RIGHT,
+        Button.DEBUG: pygame.K_F1
     }
 
     def __init__(self, gamepad: pygame.joystick.Joystick):
@@ -53,6 +54,7 @@ class Gamepad(Controller):
                 self.currentKeyStates[button] = round(self.gamepad.get_axis(1)) + 20 == button.value
             else:
                 self.currentKeyStates[button] = self.gamepad.get_button(button.value)
+        self.currentKeyStates[Button.DEBUG] = pygame.key.get_pressed()[self.BUTTON_MAP[Button.DEBUG]]
 
     def is_button_down(self, button: Button) -> bool:
         if not self.currentKeyStates or not self.previousKeyStates:

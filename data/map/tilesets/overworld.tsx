@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.11" tiledversion="1.11.0" name="overworld" tilewidth="16" tileheight="16" tilecount="4096" columns="64">
- <image source="../../assets/sprites/map/overworld.png" width="1024" height="1024"/>
+<tileset version="1.11" tiledversion="1.11.1" name="overworld" tilewidth="16" tileheight="16" tilecount="4096" columns="64">
+ <image source="../../../assets/sprites/map/overworld.png" width="1024" height="1024"/>
  <tile id="516">
   <objectgroup draworder="index" id="2">
    <object id="1" x="0" y="0" width="16" height="16"/>

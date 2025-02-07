@@ -93,3 +93,6 @@ class SoundEndEvent:
     id_str: str
 
 
+@eventclass
+class DebugToggleEvent:
+    pass

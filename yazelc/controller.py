@@ -19,6 +19,8 @@ class Button(Enum):
     DOWN = auto()
     RIGHT = auto()
 
+    DEBUG = auto()
+
 
 class Controller(abc.ABC):
     """ Main interface to game input """

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pygame
 
-from yazelc.animation import AnimationData, AnimationState, AnimationDirection, AnimationSequence
+from yazelc.animation import AnimationData, EntityState, EntityDirection, AnimationSequence
 from yazelc.font import Font
 from yazelc.utils.game_utils import IVec
 
@@ -93,7 +93,7 @@ class ResourceManager:
             all_animation_sequences = dict()
             for seq in data_dictionary['sequences']:
                 state, direction = seq.split('_', maxsplit=1)
-                key = AnimationState[state.upper()], AnimationDirection[direction.upper()]
+                key = EntityState[state.upper()], EntityDirection[direction.upper()]
 
                 repeat = data_dictionary['sequences'][seq]['repeat']
                 all_frames = data_dictionary['sequences'][seq]['frames']
@@ -113,8 +113,8 @@ class ResourceManager:
                 all_animation_sequences[key] = AnimationSequence(hashes, repeat)
 
                 # Add right animations inverted and in reverse order
-                if key[1] == AnimationDirection.RIGHT:
-                    inverted_key = key[0], AnimationDirection.LEFT
+                if key[1] == EntityDirection.RIGHT:
+                    inverted_key = key[0], EntityDirection.LEFT
                     new_hashes = []
                     for img_hash in hashes:
                         new_img_hash = f'{img_hash}inverted'
@@ -146,7 +146,7 @@ class ResourceManager:
     def get_user_path(application_name: str) -> str:
         """ Gets user path to store things like save data, etc."""
         if os.name == 'posix':
-            folder = os.path.join(os.getenv('$HOME'), '.local', 'share', application_name)
+            folder = os.path.join(os.getenv('HOME'), '.local', 'share', application_name)
             os.makedirs(folder, exist_ok=True)
             return application_name
         else:

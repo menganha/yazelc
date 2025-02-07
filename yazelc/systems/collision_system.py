@@ -76,12 +76,16 @@ class CollisionSystem(zesper.Processor):
             for ent, hb in non_solid:
                 if hb_s.colliderect(hb):
                     self.event_queue.add(SolidEnterCollisionEvent(ent_s, ent))
-                    collided_with_solid.append(ent)
-                    self.collision_resolution(hb_s, hb, ent)
+                    collided_with_solid.append((hb_s, hb, ent, self.area_of_clip(hb_s, hb)))
 
-        for ent in self.prev_collided_with_solid_entities - set(collided_with_solid):
+        for hb_s, hb, ent, _ in sorted(collided_with_solid, key=lambda x: x[-1], reverse=True
+                                       ):  # Resolve first the collisions with bigger overlaps
+            self.collision_resolution(hb_s, hb, ent)
+
+        collided_with_solid_set = {ent for _, _, ent, _ in collided_with_solid}
+        for ent in self.prev_collided_with_solid_entities - collided_with_solid_set:
             self.event_queue.add(SolidExitCollisionEvent(ent))
-        self.prev_collided_with_solid_entities = set(collided_with_solid)
+        self.prev_collided_with_solid_entities = collided_with_solid_set
 
         for ent_s, hb_s in solids:
             for ent, hb in non_solid:
@@ -105,10 +109,12 @@ class CollisionSystem(zesper.Processor):
 
     def collision_resolution(self, hitbox_solid: HitBox, hitbox: HitBox, ent: int):
         """
-        Resolves collision taking precedence on the Y axis, i.e., if the collision can be resolved by pushing
-        either horizontally or vertically the box, it will resolve it vertically
+        Resolve collision by checking which axis overlaps less. It pushes the hitbox back on that direction.
 
-        If a position exists for the input entity, then it uses the direction to choose the pushing
+        If the collision can be equally resolved on both axes, it resolves by taking precedence on the Y axis,
+        i.e., vertically. However, if a position exists for the input entity, then it uses the direction of movement to
+        select the opposite axis for the resolution, e.g., if moving vertically up, it will try to resolve on the
+        horizontal axis.
         """
 
         position = self.world.try_component(ent, Position)
@@ -120,9 +126,11 @@ class CollisionSystem(zesper.Processor):
             'b': abs(hitbox.bottom - hitbox_solid.top),
         }
         minimum_overlap = min(side_differences.values())
-        minimum_sides = [side for side in side_differences if side_differences[side] == minimum_overlap]
+        minimum_sides = [side for side in side_differences if side_differences[side] <= minimum_overlap]
         if len(minimum_sides) > 1:
-            if position and (abs(position.prev_x - position.x) < abs(position.prev_y - position.y)):
+            adv_x = abs(position.prev_x - position.x)
+            adv_y = abs(position.prev_y - position.y)
+            if position and (adv_x < adv_y):
                 weight = ('l', 'r')
             else:
                 weight = ('t', 'b')
@@ -146,9 +154,17 @@ class CollisionSystem(zesper.Processor):
 
         if position:
             if x is not None:
-                position.x = x
+                position.x = x - hitbox.offset.x  # Double statement is a trick to reset the prev_x attribute
+                position.x = x - hitbox.offset.x
             else:
-                position.y = y
+                position.y = y - hitbox.offset.y
+                position.y = y - hitbox.offset.y
+
+    @staticmethod
+    def area_of_clip(rect_1: HitBox, rect_2: HitBox) -> int:
+        clipped = rect_1.clip(rect_2)
+        area = abs(clipped.height * clipped.width)
+        return area
 
     def on_collision(self, collision_event: EnterCollisionEvent):
         # TODO: Move this to each system independently!!!!!! We are coupling too much stuff here!!!!

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.11" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="54613">
+<map version="1.11" tiledversion="1.11.1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="54613">
+ <properties>
+  <property name="start_x" type="int" value="10"/>
+  <property name="start_y" type="int" value="24"/>
+ </properties>
  <tileset firstgid="1" source="../tilesets/overworld.tsx"/>
  <tileset firstgid="4097" source="../tilesets/books_and_treasures.tsx"/>
  <layer id="2" name="water" width="32" height="32">

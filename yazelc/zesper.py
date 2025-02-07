@@ -5,7 +5,7 @@ from typing import TypeVar, Optional, Union, Type
 
 import esper
 
-from event.event_queue import EventQueue
+from yazelc.event.event_queue import EventQueue
 
 C = TypeVar('C')
 C_alt = TypeVar('C_alt')  # alternative component

@@ -1,4 +1,4 @@
-import logging
+import logging.config
 import os
 
 import pygame
@@ -9,25 +9,22 @@ from yazelc.gamepad import Gamepad
 from yazelc.keyboard import Keyboard
 from collections import deque
 
-from settings import Settings
-from yazelc.scenes.gameplay_scene import GameplayScene
-from yazelc.resource_manager import ResourceManager
-
-SETTINGS_FILENAME = 'settings.json'
+from yazelc.settings import Settings
+from yazelc.scenes.new_gameplay_scene import GameplayScene
+from yazelc.logging_config import INFO_CONFIG, ERROR_CONFIG, DEBUG_CONFIG
 
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s.%(msecs)03d [%(levelname)s]: %(message)s',
-                        datefmt='%I:%M:%S'
-                        )
+    log_config_level = os.getenv('YAZELC_LOG')
+    if log_config_level == 'INFO':
+        logging.config.dictConfig(INFO_CONFIG)
+    elif log_config_level == 'DEBUG':
+        logging.config.dictConfig(DEBUG_CONFIG)
+    else:
+        logging.config.dictConfig(ERROR_CONFIG)
 
-    root_folder = os.path.dirname(os.path.abspath(__file__))
-    resource_manager = ResourceManager(root_folder)
-
-    configuration_file_path = resource_manager.get_matching_path(SETTINGS_FILENAME)
-    settings = Settings.load_from_json(configuration_file_path)
+    settings = Settings.load_from_json('data/settings.json')
 
     window = pygame.display.set_mode(settings.window.resolution, pygame.SCALED, vsync=1)
 
@@ -41,8 +38,8 @@ if __name__ == '__main__':
         logger.info('Using keyboard controller')
 
     # NOTE: Temporary solution until we create a loader and saver ui from the main game
-    save_state = os.path.join(resource_manager.get_user_path('yazelc'), 'yazelc1.save')
-    scenes_queue = deque([GameplayScene(window, controller, resource_manager, settings, game_data)])
+    save_file = os.path.join('link.save')
+    scenes_queue = deque([GameplayScene(window, controller, settings, save_file)])
 
     while scenes_queue:
         current_scene = scenes_queue.pop()
@@ -59,4 +56,4 @@ if __name__ == '__main__':
         if current_scene.next_scene:
             scenes_queue.append(current_scene)
 
-        pygame.quit()
+    pygame.quit()

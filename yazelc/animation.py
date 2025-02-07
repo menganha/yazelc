@@ -6,8 +6,9 @@ from typing import NamedTuple
 from yazelc.utils.game_utils import IVec
 
 
-class AnimationState(Enum):
-    WALKING = 0
+# TODO: Move these two enums to somewhere else non-animation related and more general
+class EntityState(Enum):
+    MOVING = 0
     ATTACKING = 1
     NONE = 2
 
@@ -16,7 +17,7 @@ class AnimationState(Enum):
         return cls.NONE
 
 
-class AnimationDirection(Enum):
+class EntityDirection(Enum):
     DOWN = 0
     LEFT = 1
     UP = 2
@@ -41,7 +42,7 @@ class AnimationSequence(NamedTuple):
 class AnimationData(NamedTuple):
     sprite_sheet: str
     sprite_size: IVec
-    sequences: dict[tuple[AnimationState, AnimationDirection], AnimationSequence]
+    sequences: dict[tuple[EntityState, EntityDirection], AnimationSequence]
 
-    def get_sequence(self, state: AnimationState, direction: AnimationDirection) -> AnimationSequence:
+    def get_sequence(self, state: EntityState, direction: EntityDirection) -> AnimationSequence:
         return self.sequences[(state, direction)]

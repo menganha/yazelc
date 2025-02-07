@@ -18,12 +18,14 @@ class PlayerConfig(NamedTuple):
     animation: str
     sprite_depth: int
     interactive_range: IVec
+    prefer_up_down_animation: bool  # If the animation will be the one for up and down when moving diagonally
     weapon: dict  # TODO: Temporary: To be changed.
 
 
 class FontConfig(NamedTuple):
     name: str
     properties: dict
+
 
 class WindowConfig(NamedTuple):
     resolution: IVec

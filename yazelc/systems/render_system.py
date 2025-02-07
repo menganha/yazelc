@@ -5,6 +5,7 @@ import pygame
 from yazelc import components as cmp
 from yazelc import zesper
 from yazelc.camera import Camera
+from yazelc.event.events import DebugToggleEvent
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +55,14 @@ class RenderSystem(zesper.Processor):
             # Render to the window
             self.window.blit(img, rel_pos)
 
-            # On debug mode render all hitboxes
-            if self.debug:
-                if hitbox := self.world.try_component(ent, cmp.HitBox):
-                    hb_surface = pygame.Surface((hitbox.w, hitbox.h), flags=pygame.SRCALPHA)
-                    hb_surface.fill(pygame.Color('seashell'))
-                    rel_pos_hb = round(hitbox.x - self.camera.position.x), round(hitbox.y - self.camera.position.y)
-                    self.window.blit(hb_surface, rel_pos_hb)
+        # On debug mode render all hitboxes
+        if self.debug:
+            for ent, hitbox in self.world.get_component(cmp.HitBox):
+                hb_surface = pygame.Surface((hitbox.w, hitbox.h), flags=pygame.SRCALPHA)
+                hb_surface.fill(pygame.Color('blue'))
+                hb_surface.set_alpha(100)
+                rel_pos_hb = round(hitbox.x - self.camera.position.x), round(hitbox.y - self.camera.position.y)
+                self.window.blit(hb_surface, rel_pos_hb)
 
         # Render native shapes which are (normally) associated with particle effects
         # TODO: They can be on the the same loop if the position has the absolute flag on
@@ -69,3 +71,6 @@ class RenderSystem(zesper.Processor):
             pygame.draw.rect(self.window, vfx.color, rect)
 
         pygame.display.flip()
+
+    def on_debug_toggle(self, _debug_toggle_event: DebugToggleEvent):
+        self.debug = not self.debug

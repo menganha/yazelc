@@ -1,13 +1,9 @@
 """ Various reusable log configurations """
 
-DBG_CONFIG = {
+_BASE_CONFIG = {
     "version":                  1,
     "disable_existing_loggers": False,
-    "root":                     {
-        "handlers": ["console"],
-        "level":    "DEBUG"
-    },
-    "handlers":                 {
+    "handlers":   {
         "console": {
             "class":     "logging.StreamHandler",
             "formatter": "default",
@@ -20,10 +16,34 @@ DBG_CONFIG = {
             "mode":      "w"
         }
     },
-    "formatters":               {
+    "formatters": {
         "default": {
             "format":  "%(asctime)s.%(msecs)03d [%(levelname)s] @%(name)s: %(message)s",
             "datefmt": "%I:%M:%S"
         }
     }
+}
+
+DEBUG_CONFIG = {
+    "root": {
+        "handlers": ["console"],
+        "level":    "DEBUG"
+    },
+    **_BASE_CONFIG
+}
+
+INFO_CONFIG = {
+    "root": {
+        "handlers": ["console"],
+        "level":    "INFO"
+    },
+    **_BASE_CONFIG
+}
+
+ERROR_CONFIG = {
+    "root": {
+        "handlers": ["console"],
+        "level":    "ERROR"
+    },
+    **_BASE_CONFIG
 }

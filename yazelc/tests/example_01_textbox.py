@@ -2,10 +2,10 @@ import pygame
 
 pygame.init()
 
-import zesper
-from event.event_manager import EventManager, ButtonDownEvent, CloseWindowEvent
+from yazelc import zesper
+from yazelc.event.event_manager import EventManager, ButtonDownEvent, CloseWindowEvent
 
-from settings import Settings
+from yazelc.settings import Settings
 from yazelc.resource_manager import ResourceManager
 from yazelc.systems.dialog_menu_system import DialogMenuSystem, DialogMenuExitEvent, DialogMenuTriggerEvent
 from yazelc.systems.render_system import RenderSystem
@@ -56,10 +56,10 @@ class Game:
             self.event_manager.trigger_event(DialogMenuTriggerEvent(self.sign_ent_id))
             self.waiting_for_close_dialog = True
 
-    def on_window_closed(self, close_window_event: CloseWindowEvent):
+    def on_window_closed(self, _close_window_event: CloseWindowEvent):
         self.is_running = False
 
-    def on_dialog_exit(self, dialog_exit: DialogMenuExitEvent):
+    def on_dialog_exit(self, _dialog_exit: DialogMenuExitEvent):
         self.waiting_for_close_dialog = False
 
     def run(self):
