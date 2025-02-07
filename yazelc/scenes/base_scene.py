@@ -3,11 +3,11 @@ from typing import Optional
 
 import pygame
 
-from event.events import InputEvent, ChangeSceneEvent
 from yazelc import zesper
 from yazelc.controller import Controller
 from yazelc.event.event_manager import EventManager
 from yazelc.event.event_queue import EventQueue
+from yazelc.event.events import InputEvent, ChangeSceneEvent
 from yazelc.resource_manager import ResourceManager
 
 

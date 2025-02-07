@@ -24,7 +24,7 @@ PG_LOGO = ASSET_PATH / 'pygame_powered_logo.png'
 SHIELD_LOGO = ASSET_PATH / 'shield_logo.png'
 MUSIC_PATH = Path('assets', 'music', 'Quantic_Flowering_Inferno-Cumbia_Sobre_el_Mar.ogg')
 
-FONT_PATH = Path('assets', 'font', 'Anonymous Pro.ttf')
+FONT_PATH = Path('assets', 'font', 'Px437_Portfolio_6x8.ttf')
 FONT_COLOR = cfg.C_WHITE
 FONT_SIZE = 11
 TITLE_TEXT = 'A game by\nClimacus'

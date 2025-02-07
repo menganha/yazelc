@@ -1,8 +1,8 @@
 import logging
 from collections import deque
 
-from cutscene.task import Task
 from yazelc import zesper
+from yazelc.cutscene.task import Task
 
 
 class CutsceneSystem(zesper.Processor):

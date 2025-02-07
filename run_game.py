@@ -11,7 +11,7 @@ from yazelc.keyboard import Keyboard
 
 
 from yazelc import config as cfg
-from scenes import scene_manager
+from yazelc.scenes import scene_manager
 from yazelc.scenes.gameplay_scene import GameplayScene
 from yazelc.scenes.intro_scene import IntroScene
 from yazelc.utils.game_utils import IVec
