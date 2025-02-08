@@ -4,13 +4,18 @@ from dataclasses import dataclass, field
 from yazelc import components as cmp
 from yazelc.animation import EntityState, EntityDirection
 from yazelc.controller import Button, ButtonDownEvent, ButtonReleasedEvent, ButtonPressedEvent
+from yazelc.event.events import eventclass
 from yazelc.resource_manager import ResourceManager
 from yazelc.settings import PlayerConfig
 from yazelc.systems.collision_system import SolidEnterCollisionEvent
-from yazelc.systems.dialog_menu_system import DialogTriggerEvent
 from yazelc.zesper import World, Processor
 
 logger = logging.getLogger(__name__)
+
+
+@eventclass
+class DialogTriggerEvent:
+    sign_ent_id: int
 
 
 @dataclass

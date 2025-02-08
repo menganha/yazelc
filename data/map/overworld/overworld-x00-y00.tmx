@@ -208,7 +208,7 @@
   </object>
   <object id="54611" gid="517" x="160" y="368" width="16" height="16">
    <properties>
-    <property name="text" value="dummy a"/>
+    <property name="text" value="This is a mega, super, super, mega test to check if we get correct the scrolling of words when the total text is to big to fit in one single text box. We need to be able to read ahead"/>
    </properties>
   </object>
   <object id="54612" template="../templates/treasure.tx" x="112" y="368"/>

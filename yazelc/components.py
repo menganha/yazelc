@@ -57,34 +57,6 @@ class Sign:
     text: str
 
 
-@component()
-class TextBox:
-    """
-    Text boxes used for showing the dialog
-    """
-    text: str
-    cursor: int = 0  # Index of the char at which the rendered text is actually in
-    cursor_start: int = 0
-    x_pos: int = 0
-    y_pos: int = 0
-    idle: bool = False  # If the text has not been displayed fully yet is waiting to be printed
-    frame_tick: int = 0  # Tick integer that count the amount of frames between printing a char
-    frame_delay: int = 1  # How many frames to wait until the next letter printing
-
-    def next_char(self) -> str:
-        return self.text[self.cursor]
-
-    def is_at_end(self) -> bool:
-        return self.cursor >= len(self.text)
-
-    def current_sentence(self) -> str:
-        """ Gives the sentence until the word (including it) at which the index is """
-        sentence = self.text[self.cursor_start:self.cursor + 1]
-        n_words = len(sentence.rstrip().split(' '))
-        words = self.text[self.cursor_start:].split(' ')[:n_words]
-        return ' '.join(words)
-
-
 @component
 class InteractorTag:
     """ Tag entity with Hitbox to signal the player interacting with colliding object """

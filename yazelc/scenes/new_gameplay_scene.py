@@ -4,12 +4,12 @@ from yazelc.controller import ButtonDownEvent, ButtonReleasedEvent, Button, Butt
 from yazelc.event.event_manager import CloseWindowEvent
 from yazelc.event.events import DebugToggleEvent
 from yazelc.map import Map
+from yazelc.scenes.base_scene import BaseScene
 from yazelc.scenes.dialog_scene import DialogScene
-from yazelc.scenes.scene import BaseScene
 from yazelc.systems.animation_system import AnimationSystem
 from yazelc.systems.collision_system import CollisionSystem, SolidEnterCollisionEvent
-from yazelc.systems.dialog_menu_system import DialogTriggerEvent
-from yazelc.systems.player_system import PlayerSystem
+from yazelc.systems.dialog_menu_system import CreateTextBoxEvent
+from yazelc.systems.player_system import PlayerSystem, DialogTriggerEvent
 from yazelc.systems.render_system import RenderSystem
 
 
@@ -61,9 +61,13 @@ class GameplayScene(BaseScene):
 
     def on_dialog_menu_trigger(self, dialog_menu_trigger_event: DialogTriggerEvent):
         self.next_scene = DialogScene(self.window, self.controller, self.settings, self.save_state)
-        text = self.scene_state.world.component_for_entity(dialog_menu_trigger_event.sign_ent_id, cmp.Sign).text
+
+        # Copy current screen image
         renderable = cmp.Renderable(self.window.copy())
         position = cmp.Position()
         self.next_scene.scene_state.world.create_entity(position, renderable)
-        self.next_scene.create_simple_text(text)
+
+        text = self.scene_state.world.component_for_entity(dialog_menu_trigger_event.sign_ent_id, cmp.Sign).text
+        self.next_scene.scene_state.event_queue.add(CreateTextBoxEvent(text))
+
         self.finished = True

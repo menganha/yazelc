@@ -64,7 +64,7 @@ if __name__ == '__main__':
         if current_scene.next_scene:
             scenes_queue.append(current_scene.next_scene)
             needs_init = True
-        else:
+        else:  # If it's on the queue it was already initialized
             scenes_queue.pop()
             needs_init = False
 

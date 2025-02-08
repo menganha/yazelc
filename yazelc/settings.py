@@ -35,11 +35,11 @@ class WindowConfig(NamedTuple):
 class TextBoxConfig(NamedTuple):
     triangle_signal_vertices: list[IVec]
     rect_signal: pygame.Rect
-    height: int
+    rect: pygame.Rect
+    margin: IVec
     extra_line_spacing: int
-    x_margin: int
-    y_margin: int
-    image_depth: int
+    depth: int
+    blinking: int
     bgcolor: pygame.Color
     font: FontConfig
     scroll_sound: str

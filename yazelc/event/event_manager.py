@@ -8,8 +8,8 @@ from weakref import ref, WeakMethod
 import pygame
 
 from yazelc.controller import Controller, Button, ButtonDownEvent, ButtonReleasedEvent, ButtonPressedEvent
+from yazelc.event.event_queue import EventQueue
 from yazelc.event.events import eventclass
-from yazelc.zesper import Processor
 
 _EVENT = TypeVar('_EVENT')  # used for the static type checker for admitting any subclass
 _EVENT_TYPE = type[_EVENT]
@@ -33,30 +33,27 @@ class EventManager:
     def __init__(self):
         self.subscribers = defaultdict(set)
 
-    def process_all_events(self, controller: Controller = None, list_processors: list[Processor] = None):
-        """ Dispatches all the game events and let the handlers process them """
-
+    def process_system_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.trigger_event(CloseWindowEvent())
 
-        if controller:
-            controller.update()
-            for button in Button:
-                if controller.is_button_down(button):
-                    self.trigger_event(ButtonDownEvent(button))
+    def process_controller(self, controller: Controller):
+        controller.update()
+        for button in Button:
+            if controller.is_button_down(button):
+                self.trigger_event(ButtonDownEvent(button))
 
-                if controller.is_button_pressed(button):
-                    self.trigger_event(ButtonPressedEvent(button))
-                elif controller.is_button_released(button):
-                    self.trigger_event(ButtonReleasedEvent(button))
+            if controller.is_button_pressed(button):
+                self.trigger_event(ButtonPressedEvent(button))
+            elif controller.is_button_released(button):
+                self.trigger_event(ButtonReleasedEvent(button))
 
-        if list_processors:
-            for processor in list_processors:
-                while processor.event_queue:
-                    event = processor.event_queue.popleft()
-                    self.trigger_event(event)
-                processor.event_queue.process_delayed_events()
+    def process_queue(self, event_queue: EventQueue):
+        while event_queue:
+            event = event_queue.popleft()
+            self.trigger_event(event)
+        event_queue.process_delayed_events()
 
     def subscribe(self, event_type: _EVENT_TYPE, *handlers: Callable[[_EVENT], None]):
         """ Subscribe handler methods to event type """
