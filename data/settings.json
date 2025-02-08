@@ -27,9 +27,9 @@
     },
     "text_box": {
         "triangle_signal_vertices": [
-            [257, 230], [262, 235], [267, 230]
+            [255, 48], [259, 52], [263, 48]
         ],
-        "rect_signal": [257, 230, 6, 5],
+        "rect_signal": [256, 48, 7, 5],
         "rect": [0, 180, 272, 60],
         "extra_line_spacing": 5,
         "margin": [14, 12],

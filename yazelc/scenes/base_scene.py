@@ -1,4 +1,5 @@
 import abc
+from typing import Type
 
 import pygame
 
@@ -42,9 +43,8 @@ class BaseScene(abc.ABC):
         self.scene_state.event_manager.process_controller(self.controller)
 
         self.scene_state.event_manager.process_queue(self.scene_state.event_queue)
-        if self.scene_state.processor_list:
-            for processor in self.scene_state.processor_list:
-                self.scene_state.event_manager.process_queue(processor.event_queue)
+        for processor in self.scene_state.processor_list:
+            self.scene_state.event_manager.process_queue(processor.event_queue)
 
         self.scene_state.world.process()
         for proc in self.scene_state.processor_list:
@@ -53,3 +53,10 @@ class BaseScene(abc.ABC):
     @abc.abstractmethod
     def on_exit(self):
         pass
+
+    def get_processor_instance(self, type_: Type[zesper.Processor]) -> zesper.Processor | None:
+        for proc in self.scene_state.processor_list:
+            if isinstance(proc, type_):
+                return proc
+        else:
+            return None

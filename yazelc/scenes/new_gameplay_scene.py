@@ -1,3 +1,5 @@
+import pygame
+
 import yazelc.components as cmp
 from yazelc.camera import Camera
 from yazelc.controller import ButtonDownEvent, ButtonReleasedEvent, Button, ButtonPressedEvent
@@ -8,7 +10,6 @@ from yazelc.scenes.base_scene import BaseScene
 from yazelc.scenes.dialog_scene import DialogScene
 from yazelc.systems.animation_system import AnimationSystem
 from yazelc.systems.collision_system import CollisionSystem, SolidEnterCollisionEvent
-from yazelc.systems.dialog_menu_system import CreateTextBoxEvent
 from yazelc.systems.player_system import PlayerSystem, DialogTriggerEvent
 from yazelc.systems.render_system import RenderSystem
 
@@ -68,6 +69,10 @@ class GameplayScene(BaseScene):
         self.next_scene.scene_state.world.create_entity(position, renderable)
 
         text = self.scene_state.world.component_for_entity(dialog_menu_trigger_event.sign_ent_id, cmp.Sign).text
-        self.next_scene.scene_state.event_queue.add(CreateTextBoxEvent(text))
-
+        background = pygame.Surface(self.settings.text_box.rect.size)
+        background.fill(self.settings.text_box.bgcolor)
+        position = cmp.Position(*self.settings.text_box.rect.topleft)
+        renderable = cmp.Renderable(image=background, depth=self.settings.text_box.depth)
+        text_box = cmp.TextBox(text)
+        self.next_scene.scene_state.world.create_entity(renderable, position, text_box)
         self.finished = True

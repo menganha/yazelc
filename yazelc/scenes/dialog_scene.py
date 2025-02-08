@@ -2,7 +2,7 @@ from yazelc.controller import Button, ButtonPressedEvent
 from yazelc.event.event_manager import CloseWindowEvent
 from yazelc.event.events import DebugToggleEvent
 from yazelc.scenes.base_scene import BaseScene
-from yazelc.systems.dialog_menu_system import DialogMenuSystem, CreateTextBoxEvent, DialogEndEvent
+from yazelc.systems.dialog_menu_system import DialogMenuSystem, DialogEndEvent
 from yazelc.systems.render_system import RenderSystem
 
 
@@ -17,7 +17,6 @@ class DialogScene(BaseScene):
         self.scene_state.event_manager.subscribe(CloseWindowEvent, self.on_window_close)
         self.scene_state.event_manager.subscribe(ButtonPressedEvent, dialog_menu_system.on_button_pressed, self.on_button_pressed)
         self.scene_state.event_manager.subscribe(DebugToggleEvent, render_system.on_debug_toggle)
-        self.scene_state.event_manager.subscribe(CreateTextBoxEvent, dialog_menu_system.on_create_textbox)
         self.scene_state.event_manager.subscribe(DialogEndEvent, self.on_dialog_end)
 
     def on_exit(self):
