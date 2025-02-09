@@ -52,10 +52,7 @@ class Map:
     will generate it own image map that will be overlaid on top of all others. This is to show 3d depth by hiding
     the character in between these two layers, e.g., in between trees
     """
-    DOOR_TARGET_X_STR = 'target_x'
-    DOOR_TARGET_Y_STR = 'target_y'
-    DOOR_TARGET_STR = 'target_door'
-    DOOR_PATH_SEP = ':'
+    DOOR_PROPERTY = 'target_map'
     FOREGROUND_LAYER_NAME = 'foreground'
     ENEMY_PROPERTY = 'enemy'
     COLLIDER_PROPERTY = 'colliders'
@@ -125,20 +122,22 @@ class Map:
         """
         for obj in self.tmx_data.objects:
             components = []
-
-            if self.COLLIDER_PROPERTY in obj.properties:
-                collider = obj.properties['colliders'][0]  # Assume tile has a single collider box
-                hit_box = cmp.HitBox(obj.x + collider.x, obj.y + collider.y,
-                                     collider.width, collider.height,
-                                     solid=True
-                                     )
-                components.append(hit_box)
+            position = cmp.Position(obj.x, obj.y)
+            components.append(position)
 
             if obj.image:
                 renderable = cmp.Renderable(obj.image)
-                position = cmp.Position(obj.x, obj.y)
                 components.append(renderable)
-                components.append(position)
+
+            if self.COLLIDER_PROPERTY in obj.properties:
+                collider = obj.properties['colliders'][0]  # Assume tile has a single collider box
+                hit_box = cmp.HitBox(
+                    obj.x + collider.x, obj.y + collider.y, collider.width, collider.height, solid=True
+                )
+                components.append(hit_box)
+            else:
+                hit_box = cmp.HitBox(obj.x, obj.y, obj.width, obj.height, solid=False)
+                components.append(hit_box)
 
             # Mutually exclusive properties
             if self.TEXT_PROPERTY in obj.properties:
@@ -150,6 +149,10 @@ class Map:
             elif self.ITEM_PROPERTY in obj.properties:
                 collectable = cmp.Collectable(CollectableItemType(obj.properties[self.ITEM_PROPERTY]), 1, in_chest=True)
                 components.append(collectable)
+
+            elif self.DOOR_PROPERTY in obj.properties:
+                path = self.resource_manager.find_file(obj.properties[self.DOOR_PROPERTY])
+                components.append(cmp.Door(path))
 
             if not components:
                 logger.error(f'No parseable properties found for object with id {obj.id} and properties {obj.properties}')

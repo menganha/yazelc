@@ -2,19 +2,27 @@ import gc
 import unittest
 from unittest.mock import Mock
 
-# from event.events import PauseEvent, DeathEvent, CollisionEvent
-from event.event_manager import EventManager, Event
+from yazelc.event.event_manager import EventManager
+from yazelc.event.events import eventclass
 
 
-class MockPauseEvent(Event):
+@eventclass
+class MockPauseEvent:
     pass
 
 
-class MockDeathEvent(Event):
+@eventclass
+class MockDeathEvent:
     pass
 
 
-class MockCollisionEvent(Event):
+@eventclass
+class MockCollisionEvent:
+    pass
+
+
+@eventclass
+class PauseEvent:
     pass
 
 
@@ -28,9 +36,12 @@ class DeathClass:
         pass
 
 
-class PauseEvent(Event):
+def regular_function(pause_event: PauseEvent):
     pass
 
+
+def regular_function_more_arguments(arg1, arg2, pause_event: PauseEvent):
+    pass
 
 class TestEvent(unittest.TestCase):
 
@@ -43,9 +54,9 @@ class TestEvent(unittest.TestCase):
         self.event_manager.subscribe(MockCollisionEvent, self.instance_with_reference.on_death)
 
     def test_remove_one_handlers(self):
-        self.event_manager.remove_handlers_for_instance(MockDeathEvent, self.instance_with_reference.on_death)
-        self.assertTrue(MockDeathEvent not in self.event_manager.subscribers)
-        self.assertTrue(MockCollisionEvent in self.event_manager.subscribers)
+        self.event_manager.remove_handler_for_event(MockDeathEvent, self.instance_with_reference.on_death)
+        self.assertTrue('mockdeathevent' not in self.event_manager.subscribers)
+        self.assertTrue('mockcollisionevent' in self.event_manager.subscribers)
 
     def test_remove_all_handlers(self):
         self.event_manager.remove_handlers()
@@ -53,16 +64,16 @@ class TestEvent(unittest.TestCase):
 
     def test_remove_all_handlers_of_one_event_type(self):
         self.event_manager.remove_handlers(MockCollisionEvent)
-        self.assertFalse(self.event_manager.subscribers[MockCollisionEvent])
-        self.assertTrue(self.event_manager.subscribers[MockDeathEvent])
+        self.assertFalse(self.event_manager.subscribers['mockcollisionevent'])
+        self.assertTrue(self.event_manager.subscribers['mockdeathevent'])
 
     def test_weak_ref(self):
         gc.collect()
-        self.assertFalse(MockPauseEvent in self.event_manager.subscribers)
-        self.assertTrue(MockDeathEvent in self.event_manager.subscribers)
+        self.assertTrue('mockpauseevent' not in self.event_manager.subscribers)
+        self.assertTrue('mockdeathevent' in self.event_manager.subscribers)
 
     def test_dispatch_event(self):
-        class MockEvent(Event):
+        class MockEvent:
             pass
 
         event = MockEvent()
@@ -71,11 +82,12 @@ class TestEvent(unittest.TestCase):
         mock_method_3 = Mock()
         self.event_manager.subscribe(MockEvent, mock_method_1)
         self.event_manager.subscribe(MockEvent, mock_method_2)
-        self.event_manager.subscribe(MockEvent, mock_method_3)
+        self.event_manager.subscribe(MockEvent, mock_method_3, 'dummy_arg', 'dummy_arg2')
         self.event_manager.trigger_event(event)
         mock_method_1.assert_called_once_with(event)
         mock_method_2.assert_called_once_with(event)
-        mock_method_3.assert_called_once_with(event)
+        mock_method_3.assert_called_once_with('dummy_arg', 'dummy_arg2', event)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,36 +1,35 @@
 from yazelc.controller import Button, ButtonPressedEvent
 from yazelc.event.event_manager import CloseWindowEvent
 from yazelc.event.events import DebugToggleEvent
-from yazelc.scenes.base_scene import BaseScene
+from yazelc.scenes.base_scene import Scene
 from yazelc.systems.dialog_menu_system import DialogMenuSystem, DialogEndEvent
 from yazelc.systems.render_system import RenderSystem
 
 
-class DialogScene(BaseScene):
+def init(scene: Scene):
+    dialog_menu_system = DialogMenuSystem(scene.settings.text_box, scene.scene_state.world, scene.resources)
+    render_system = RenderSystem(scene.window, scene.settings.window.bgcolor, scene.scene_state.world)
+    scene.scene_state.processor_list = [dialog_menu_system, render_system]
 
-    def on_init(self):
-        dialog_menu_system = DialogMenuSystem(self.settings.text_box, self.scene_state.world, self.scene_state.resources)
-        render_system = RenderSystem(self.window, self.settings.window.bgcolor, self.scene_state.world)
-        self.scene_state.processor_list = [dialog_menu_system, render_system]
+    # Connect all events with handlers
+    scene.scene_state.event_manager.subscribe(CloseWindowEvent, on_window_close, scene)
+    scene.scene_state.event_manager.subscribe(ButtonPressedEvent, dialog_menu_system.on_button_pressed)
+    scene.scene_state.event_manager.subscribe(ButtonPressedEvent, on_button_pressed, scene)
+    scene.scene_state.event_manager.subscribe(DebugToggleEvent, render_system.on_debug_toggle)
+    scene.scene_state.event_manager.subscribe(DialogEndEvent, on_dialog_end, scene)
 
-        # Connect all events with handlers
-        self.scene_state.event_manager.subscribe(CloseWindowEvent, self.on_window_close)
-        self.scene_state.event_manager.subscribe(ButtonPressedEvent, dialog_menu_system.on_button_pressed, self.on_button_pressed)
-        self.scene_state.event_manager.subscribe(DebugToggleEvent, render_system.on_debug_toggle)
-        self.scene_state.event_manager.subscribe(DialogEndEvent, self.on_dialog_end)
 
-    def on_exit(self):
-        pass
+def on_window_close(scene: Scene, _close_window_event: CloseWindowEvent):
+    # TODO: Before exiting we should ask if you want to save, etc.
+    scene.finished = True
+    scene.next_scene = None
 
-    def on_window_close(self, _close_window_event: CloseWindowEvent):
-        # TODO: Before exiting we should ask if you want to save, etc.
-        self.finished = True
-        self.next_scene = None
 
-    def on_dialog_end(self, _dialog_end_event: DialogEndEvent):
-        self.finished = True
-        self.next_scene = None
+def on_dialog_end(scene: Scene, _dialog_end_event: DialogEndEvent):
+    scene.finished = True
+    scene.next_scene = None
 
-    def on_button_pressed(self, button_released_event: ButtonPressedEvent):
-        if button_released_event.button == Button.DEBUG:
-            self.scene_state.event_manager.trigger_event(DebugToggleEvent())
+
+def on_button_pressed(scene: Scene, button_released_event: ButtonPressedEvent):
+    if button_released_event.button == Button.DEBUG:
+        scene.scene_state.event_manager.trigger_event(DebugToggleEvent())

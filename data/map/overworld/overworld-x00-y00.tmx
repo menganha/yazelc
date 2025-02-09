@@ -189,9 +189,7 @@
  <objectgroup color="#aa0000" id="13" name="interactive">
   <object id="19692" x="48" y="368" width="16" height="4">
    <properties>
-    <property name="target_door" value="dungeon_1:0_0.tmx"/>
-    <property name="target_x" type="int" value="8"/>
-    <property name="target_y" type="int" value="13"/>
+    <property name="target_map" value="dungeon_1/0_0.tmx"/>
    </properties>
   </object>
   <object id="43124" x="272" y="64" width="16" height="4">

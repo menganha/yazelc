@@ -192,8 +192,6 @@ class Weapon:
 @component
 class Door:
     target_map: str
-    target_x: int
-    target_y: int
 
 
 @component()
@@ -224,27 +222,3 @@ class Animation:
     is_playing: bool = False
 
 
-@component
-class TextBox:
-    """ Text boxes used for showing the dialog """
-    text: str = ''
-    cursor: int = 0  # Index of the char at which the rendered text is actually in
-    line_start: int = 0  # Index of the text char at which the current line starts
-    x_pos: int = 0
-    y_pos: int = 0
-    idle: bool = False
-    typing_time = 1
-    counter = 0
-
-    def next_char(self) -> str:
-        return self.text[self.cursor]
-
-    def is_at_end(self) -> bool:
-        return self.cursor >= len(self.text)
-
-    def current_sentence(self) -> str:
-        """ Gives the sentence until the word (including it) at which the index is """
-        sentence = self.text[self.line_start:self.cursor + 1]
-        n_words = len(sentence.rstrip().split(' '))
-        words = self.text[self.line_start:].split(' ')[:n_words]
-        return ' '.join(words)

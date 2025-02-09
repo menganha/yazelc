@@ -3,6 +3,8 @@ import os
 
 import pygame
 
+from yazelc.resource_manager import ResourceManager
+from yazelc.scenes import base_scene
 from yazelc.systems.player_system import PlayerState
 
 pygame.init()
@@ -12,7 +14,7 @@ from yazelc.keyboard import Keyboard
 from collections import deque
 
 from yazelc.settings import Settings
-from yazelc.scenes.new_gameplay_scene import GameplayScene
+from yazelc.scenes import new_gameplay_scene
 from yazelc.logging_config import INFO_CONFIG, ERROR_CONFIG, DEBUG_CONFIG
 from yazelc import save
 
@@ -42,31 +44,24 @@ if __name__ == '__main__':
 
     save_file = os.path.join('link.save')  # NOTE: Temporary solution until we create a loader and saver ui from the main game
     save = save.load_state(save_file) if os.path.exists(save_file) else PlayerState()
-    scenes_queue = deque([GameplayScene(window, controller, settings, save)])
+    resources = ResourceManager()
+    scene = base_scene.Scene(window, controller, resources, settings, save)
+    new_gameplay_scene.init(scene)
+    scenes_queue = deque([scene])
 
     needs_init = True
     while scenes_queue:
 
         current_scene = scenes_queue[-1]
-        current_scene.finished = None
+        current_scene.finished = False
         current_scene.next_scene = None
 
-        logger.info(f'Entering scene {current_scene.__class__}')
-        if needs_init:
-            current_scene.on_init()
-
         while not current_scene.finished:
-            current_scene.update()
-
-        logger.info(f'Exiting scene {current_scene.__class__}')
-        current_scene.on_exit()
+            base_scene.update(current_scene)
 
         if current_scene.next_scene:
             scenes_queue.append(current_scene.next_scene)
-            needs_init = True
         else:  # If it's on the queue it was already initialized
             scenes_queue.pop()
-            needs_init = False
-
 
     pygame.quit()

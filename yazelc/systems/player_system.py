@@ -7,7 +7,7 @@ from yazelc.controller import Button, ButtonDownEvent, ButtonReleasedEvent, Butt
 from yazelc.event.events import eventclass
 from yazelc.resource_manager import ResourceManager
 from yazelc.settings import PlayerConfig
-from yazelc.systems.collision_system import SolidEnterCollisionEvent
+from yazelc.systems.collision_system import SolidEnterCollisionEvent, EnterCollisionEvent
 from yazelc.zesper import World, Processor
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,11 @@ logger = logging.getLogger(__name__)
 @eventclass
 class DialogTriggerEvent:
     sign_ent_id: int
+
+
+@eventclass
+class EnterDoorEvent:
+    map: str
 
 
 @dataclass
@@ -165,3 +170,9 @@ class PlayerSystem(Processor):
         if collision_event.ent == self.interaction_box_entity and self.world.try_component(collision_event.ent_solid, cmp.Sign):
             self.event_queue.add(DialogTriggerEvent(collision_event.ent_solid))
             self.world.remove_component(self.interaction_box_entity, cmp.HitBox)
+
+    def on_collision(self, collision_event: EnterCollisionEvent):
+        if res := self.world.try_signature(collision_event.ent_1, collision_event.ent_2, cmp.Door):
+            ent_door, door, ent = res
+            if ent == self.player_entity:
+                self.event_queue.add(EnterDoorEvent(door.target_map))
