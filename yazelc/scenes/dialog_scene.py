@@ -7,16 +7,16 @@ from yazelc.systems.render_system import RenderSystem
 
 
 def init(scene: Scene):
-    dialog_menu_system = DialogMenuSystem(scene.settings.text_box, scene.scene_state.world, scene.resources)
-    render_system = RenderSystem(scene.window, scene.settings.window.bgcolor, scene.scene_state.world)
-    scene.scene_state.processor_list = [dialog_menu_system, render_system]
+    dialog_menu_system = DialogMenuSystem(scene.settings.text_box, scene.state.world, scene.resources)
+    render_system = RenderSystem(scene.window, scene.settings.window.bgcolor, scene.state.world)
+    scene.state.processor_list = [dialog_menu_system, render_system]
 
     # Connect all events with handlers
-    scene.scene_state.event_manager.subscribe(CloseWindowEvent, on_window_close, scene)
-    scene.scene_state.event_manager.subscribe(ButtonPressedEvent, dialog_menu_system.on_button_pressed)
-    scene.scene_state.event_manager.subscribe(ButtonPressedEvent, on_button_pressed, scene)
-    scene.scene_state.event_manager.subscribe(DebugToggleEvent, render_system.on_debug_toggle)
-    scene.scene_state.event_manager.subscribe(DialogEndEvent, on_dialog_end, scene)
+    scene.state.event_manager.subscribe(CloseWindowEvent, on_window_close, scene)
+    scene.state.event_manager.subscribe(ButtonPressedEvent, dialog_menu_system.on_button_pressed)
+    scene.state.event_manager.subscribe(ButtonPressedEvent, on_button_pressed, scene)
+    scene.state.event_manager.subscribe(DebugToggleEvent, render_system.on_debug_toggle)
+    scene.state.event_manager.subscribe(DialogEndEvent, on_dialog_end, scene)
 
 
 def on_window_close(scene: Scene, _close_window_event: CloseWindowEvent):
@@ -32,4 +32,4 @@ def on_dialog_end(scene: Scene, _dialog_end_event: DialogEndEvent):
 
 def on_button_pressed(scene: Scene, button_released_event: ButtonPressedEvent):
     if button_released_event.button == Button.DEBUG:
-        scene.scene_state.event_manager.trigger_event(DebugToggleEvent())
+        scene.state.event_manager.trigger_event(DebugToggleEvent())

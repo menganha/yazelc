@@ -61,6 +61,8 @@ if __name__ == '__main__':
 
         if current_scene.next_scene:
             scenes_queue.append(current_scene.next_scene)
+        elif current_scene.jump_to_exit:
+            scenes_queue.clear()
         else:  # If it's on the queue it was already initialized
             scenes_queue.pop()
 

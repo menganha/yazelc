@@ -36,7 +36,7 @@ class Inventory:
 @dataclass
 class PlayerState:
     inventory: Inventory = field(default_factory=Inventory)
-    last_visited_map: str = "data/map/overworld/overworld-x00-y00.tmx"
+    map: str = "data/map/overworld/overworld-x00-y00.tmx"
     # TODO: Here we add everything that can be taken away from the player, like different items weapons, etc.
     #   We could serialize this to be part of a save state later on
 
@@ -127,6 +127,10 @@ class PlayerSystem(Processor):
     def set_position(self, pos_x: int, pos_y: int):
         new_position = cmp.Position(pos_x, pos_y)
         self.world.add_component(self.player_entity, new_position)
+
+    def step(self, step_x: float, step_y: float):
+        self.velocity.x = step_x
+        self.velocity.y = step_y
 
     def on_button_down(self, button_event: ButtonDownEvent):
         if button_event.button == Button.LEFT:
