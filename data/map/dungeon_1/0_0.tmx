@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.11" tiledversion="1.11.1" orientation="orthogonal" renderorder="right-down" width="17" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="2393">
+<map version="1.11" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="17" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="2398">
  <properties>
   <property name="start_x" type="int" value="8"/>
-  <property name="start_y" type="int" value="15"/>
+  <property name="start_y" type="int" value="13"/>
  </properties>
  <tileset firstgid="1" source="../tilesets/overworld.tsx"/>
  <tileset firstgid="4097" source="../tilesets/dungeon.tsx"/>
@@ -64,18 +64,16 @@
 </data>
  </layer>
  <objectgroup id="4" name="interactive" tintcolor="#74b383">
-  <object id="137" x="128" y="220" width="16" height="4">
-   <properties>
-    <property name="target_door" value="overworld:overworld_1.tmx"/>
-    <property name="target_x" type="int" value="3"/>
-    <property name="target_y" type="int" value="23"/>
-   </properties>
-  </object>
   <object id="557" x="256" y="112" width="4" height="16">
    <properties>
     <property name="target_door" value="dungeon_1:1_0.tmx"/>
     <property name="target_x" type="int" value="1"/>
     <property name="target_y" type="int" value="7"/>
+   </properties>
+  </object>
+  <object id="2396" template="../templates/door.tx" x="128" y="224" width="16" height="4" rotation="0">
+   <properties>
+    <property name="target_map" value="overworld/overworld-x00-y00.tmx"/>
    </properties>
   </object>
  </objectgroup>

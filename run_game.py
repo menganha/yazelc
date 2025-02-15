@@ -47,7 +47,7 @@ if __name__ == '__main__':
     resources = ResourceManager()
     scene = base_scene.Scene(window, controller, resources, settings, save)
     new_gameplay_scene.init(scene)
-    scenes_queue = deque([scene])
+    scenes_queue = deque([scene])  # TODO: We could implement this as a single-sided linked list, it is just a stack after all
 
     needs_init = True
     while scenes_queue:

@@ -66,7 +66,7 @@ def on_enter_door_event(scene, enter_door_event: EnterDoorEvent):
     scene.state.event_manager.remove_handler_for_event(ButtonReleasedEvent, player_system.on_button_released)
     scene.state.event_manager.remove_handler_for_event(ButtonPressedEvent, player_system.on_button_pressed)
 
-    duration_frames = int(20 // 0.499999)  # TODO: Remove these magic number and derive it from some config.
+    duration_frames = int(20 // 0.499999)  # TODO: Remove these magic number and derive it from some config and add a condition for moving top to bottom
     movement = functools.partial(player_system.step, 0.0, -0.4999999)
     movement_task = FunctionTask(movement, duration_frames)
 

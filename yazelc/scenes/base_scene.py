@@ -33,9 +33,10 @@ class Scene:
         self.settings: Settings = settings
         self.save_state: PlayerState = save_state
 
-        self.jump_to_exit: bool = False  # If scene is finished, it exits from the scene stack without falling to the other scenes
         self.finished: bool = False
         self.next_scene: Scene | None = None
+        # If the scene is finished, it exits directly from the scene stack without falling back to the previous scene
+        self.jump_to_exit: bool = False
 
 
 def on_window_close(scene: Scene, _close_window_event: CloseWindowEvent):

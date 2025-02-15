@@ -3,15 +3,15 @@ import pygame.freetype
 
 pygame.init()
 
-import zesper
-from event.event_manager import EventManager, ButtonDownEvent, CloseWindowEvent, ButtonReleasedEvent
+from yazelc import zesper
+from yazelc.event.event_manager import EventManager, ButtonDownEvent, CloseWindowEvent, ButtonReleasedEvent
 
-from settings import Settings
+from yazelc.settings import Settings
 from yazelc.resource_manager import ResourceManager
 from yazelc.systems.render_system import RenderSystem
 from yazelc.systems.kinetic_system import KineticSystem, EndMovementEvent
 from yazelc.systems.collision_system import CollisionSystem, EnterCollisionEvent, ExitCollisionEvent, SolidEnterCollisionEvent, SolidExitCollisionEvent, HitboxSquishedEvent
-from yazelc.components import Renderable, Position, HitBox, Move
+from yazelc.components import Renderable, Position, HitBox, Move, Velocity
 from yazelc.keyboard import Keyboard, Button
 from yazelc.utils.game_utils import IVec
 
@@ -21,7 +21,7 @@ class Game:
         self.is_running = True
         self.waiting_for_close_dialog = False
 
-        self.config = Settings.load_from_json('../settings.json', window={'bgcolor': pygame.Color(255, 255, 255)})
+        self.config = Settings.load_from_json('../../data/settings.json', window={'bgcolor': pygame.Color(255, 255, 255)})
         self.resource_manager = ResourceManager('../../')
         self.event_manager = EventManager()
         self.world = zesper.World()
@@ -61,20 +61,42 @@ class Game:
         msg = 'You have been Squished!!!!'
         self.squished_msg_surface = font_red.render(msg)
 
-        # Wall
+        # Walls
         image = pygame.Surface((20, 20))
         image.fill('black')
         renderable = Renderable(image)
+
         position = Position(50, 130)
         hitbox = HitBox(50, 130, 20, 20, solid=True)
         self.world.create_entity(position, renderable, hitbox)
 
-        # Non-Solid Component
+        position = Position(100, 50)
+        hitbox = HitBox(int(position.x), int(position.y), 20, 20, solid=True)
+        self.world.create_entity(position, renderable, hitbox)
+
+        # Non-Solid boxes
         image = pygame.Surface((10, 10))
         renderable = Renderable(image)
         image.fill('pink')
-        self.world.create_entity(Position(10, 50), HitBox(10, 50, 10, 10), renderable)
-        self.world.create_entity(Position(200, 70), HitBox(200, 70, 10, 10), renderable)
+
+        # NOTE: The Hitbox position doesn't matter as it gets updated once the hitboxes start moving
+        vel = 0.1
+        self.world.create_entity(Position(80, 41), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(vel, 0), renderable)
+        self.world.create_entity(Position(300, 41), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(-vel, 0), renderable)
+        self.world.create_entity(Position(80, 69), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(vel, 0), renderable)
+        self.world.create_entity(Position(300, 69), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(-vel, 0), renderable)
+
+        self.world.create_entity(Position(91, 120), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(0, -vel), renderable)
+        self.world.create_entity(Position(119, 120), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(0, -vel), renderable)
+        self.world.create_entity(Position(91, -50), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(0, vel), renderable)
+        self.world.create_entity(Position(119, -50), HitBox(10, 41, 10, 10, skin_depth=3), Velocity(0, vel), renderable)
+
+        # Diagonal movement
+        self.world.create_entity(Position(60, 100), HitBox(10, 41, 10, 10, skin_depth=0), Velocity(vel, -vel), renderable)
+
+        # Other non-moving non-solid hitboxes
+        self.world.create_entity(Position(10, 200), HitBox(10, 50, 10, 10), renderable)
+        self.world.create_entity(Position(200, 220), HitBox(200, 70, 10, 10), renderable)
 
         # Moving Wall
         image = pygame.Surface((20, 20))
@@ -105,7 +127,7 @@ class Game:
         hitbox = self.world.component_for_entity(self.character, HitBox)
         # This tiny delta ensures that the rounding produces the displacement pattern 1,2,1,2...
         # per frame that averages a velocity of 1.5
-        velocity = 1.5 - 1e-8
+        velocity = 1
         if button_event.button == Button.LEFT:
             position.x -= velocity
         if button_event.button == Button.RIGHT:
@@ -138,26 +160,30 @@ class Game:
             position.y = round(position.y)
 
     def on_solid_enter_collision(self, _collision_event: SolidEnterCollisionEvent):
-        if self.solid_collision_entity is None:
+        if _collision_event.ent == self.character and self.solid_collision_entity is None:
             self.solid_collision_entity = self.world.create_entity(
                 Renderable(self.collision_msg_surface_solid),
                 Position(0, 10)
             )
 
-    def on_solid_exit_collision(self, _collision_event: SolidEnterCollisionEvent):
-        self.world.delete_entity(self.solid_collision_entity)
-        self.solid_collision_entity = None
+    def on_solid_exit_collision(self, _collision_event: SolidExitCollisionEvent):
+        if _collision_event.ent == self.character:
+            self.world.delete_entity(self.solid_collision_entity)
+            self.solid_collision_entity = None
 
     def on_enter_collision(self, _collision_event: EnterCollisionEvent):
-        if self.non_solid_collision_entity is None:
+        collided_with_char = _collision_event.ent_1 == self.character or _collision_event.ent_2 == self.character
+        if collided_with_char and self.non_solid_collision_entity is None:
             self.non_solid_collision_entity = self.world.create_entity(
                 Renderable(self.collision_msg_surface),
                 Position(0, 20)
             )
 
     def on_exit_collision(self, _collision_event: ExitCollisionEvent):
-        self.world.delete_entity(self.non_solid_collision_entity)
-        self.non_solid_collision_entity = None
+        collided_with_char = _collision_event.ent_1 == self.character or _collision_event.ent_2 == self.character
+        if collided_with_char:
+            self.world.delete_entity(self.non_solid_collision_entity)
+            self.non_solid_collision_entity = None
 
     def on_window_closed(self, _close_window_event: CloseWindowEvent):
         self.is_running = False
@@ -167,7 +193,10 @@ class Game:
 
     def run(self):
         while self.is_running:
-            self.event_manager.process_all_events(self.controller, self.system_list)
+            self.event_manager.process_system_events()
+            self.event_manager.process_controller(self.controller)
+            for processor in self.system_list:
+                self.event_manager.process_queue(processor.event_queue)
             self.world.process()
             for processor in self.system_list:
                 processor.process()

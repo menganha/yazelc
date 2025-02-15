@@ -58,14 +58,15 @@ class RenderSystem(zesper.Processor):
         # On debug mode render all hitboxes
         if self.debug:
             for ent, hitbox in self.world.get_component(cmp.HitBox):
-                hb_surface = pygame.Surface((hitbox.w, hitbox.h), flags=pygame.SRCALPHA)
-                hb_surface.fill(pygame.Color('blue'))
-                hb_surface.set_alpha(100)
-                rel_pos_hb = round(hitbox.x - self.camera.position.x), round(hitbox.y - self.camera.position.y)
-                self.window.blit(hb_surface, rel_pos_hb)
+                rect = pygame.Rect(hitbox.x - round(self.camera.position.x),
+                                   hitbox.y - round(self.camera.position.y),
+                                   hitbox.width,
+                                   hitbox.height
+                                   )
+                pygame.draw.rect(self.window, pygame.Color('fuchsia'), rect, width=1)
 
         # Render native shapes which are (normally) associated with particle effects
-        # TODO: They can be on the the same loop if the position has the absolute flag on
+        # TODO: They can be on the the same loop if the position has the is_relative flag
         for ent, (vfx, pos) in self.world.get_components(cmp.Particle, cmp.Position):
             rect = pygame.Rect(round(pos.x), round(pos.y), 1, 1)
             pygame.draw.rect(self.window, vfx.color, rect)

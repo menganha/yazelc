@@ -4,7 +4,7 @@
         "bgcolor": [0, 0, 0]
     },
     "player": {
-        "velocity": 1.4999999999,
+        "velocity": 1.49999999,
         "velocity_diagonal": 1,
         "hitbox_size": [10, 10],
         "hitbox_offset": [3, 3],

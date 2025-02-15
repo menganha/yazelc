@@ -45,11 +45,13 @@ class Controller(abc.ABC):
 
 @eventclass
 class ButtonDownEvent:
+    """ If the button is just pressed"""
     button: Button
 
 
 @eventclass
 class ButtonPressedEvent:
+    """ If the button has just been pressed, i.e., not pressed on the previous polling check """
     button: Button
 
 

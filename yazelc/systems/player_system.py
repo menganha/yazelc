@@ -1,4 +1,5 @@
 import logging
+import math
 from dataclasses import dataclass, field
 
 from yazelc import components as cmp
@@ -72,7 +73,9 @@ class PlayerSystem(Processor):
     def process(self):
         """ Normalizes velocity, moves and handles animation """
 
-        if int(self.velocity.x) != 0 and int(self.velocity.y) != 0:  # Normalize velocity
+        vel_x_zero = math.isclose(self.velocity.x, 0)
+        vel_y_zero = math.isclose(self.velocity.y, 0)
+        if not vel_x_zero and not vel_y_zero:  # Normalize velocity
             sign = int(0 < self.velocity.x) - int(self.velocity.x < 0)
             self.velocity.x = self.player_config.velocity_diagonal * sign
 
@@ -84,11 +87,11 @@ class PlayerSystem(Processor):
 
         position.x += self.velocity.x
         position.y += self.velocity.y
-        hitbox.x = int(position.x + hitbox.offset.x)
-        hitbox.y = int(position.y + hitbox.offset.y)
+        hitbox.x = round(position.x) + hitbox.offset.x
+        hitbox.y = round(position.y) + hitbox.offset.y
 
         # Animation handling
-        not_moving = int(self.velocity.x) == 0 and int(self.velocity.y) == 0
+        not_moving = vel_x_zero and vel_y_zero
         has_animation = self.world.has_component(self.player_entity, cmp.Animation)
         if not_moving:
             if has_animation:  # Get the starting frame and set it to the renderable image
@@ -97,23 +100,20 @@ class PlayerSystem(Processor):
                 renderable.image = self.resource_manager.image(animation.sequence.get_image_id(0))
                 self.world.remove_component(self.player_entity, cmp.Animation)
         else:
-            logger.debug(f'movement step '
-                         f'{round(position.x) - round(position.prev_x)}, '
-                         f'{round(position.y) - round(position.prev_y)}'
-                         )
+            logger.debug(f'movement step: {round(position.x) - round(position.prev_x)}, {round(position.y) - round(position.prev_y)}')
 
             # Check change of entity direction
             old_direction = self.direction
 
             if self.player_config.prefer_up_down_animation or self.directional_key_released or not has_animation:
-                if int(self.velocity.x) < 0:
+                if self.velocity.x < 0:
                     self.direction = EntityDirection.LEFT
-                elif int(self.velocity.x) > 0:
+                elif self.velocity.x > 0:
                     self.direction = EntityDirection.RIGHT
 
-                if int(self.velocity.y) < 0:
+                if self.velocity.y < 0:
                     self.direction = EntityDirection.UP
-                elif int(self.velocity.y) > 0:
+                elif self.velocity.y > 0:
                     self.direction = EntityDirection.DOWN
 
             if old_direction != self.direction or not has_animation:
@@ -144,29 +144,37 @@ class PlayerSystem(Processor):
 
     def on_button_pressed(self, button_event: ButtonPressedEvent):
         if button_event.button == Button.A:
-            # Create an interaction box
-            player_hitbox = self.world.component_for_entity(self.player_entity, cmp.HitBox)
-            hitbox = cmp.HitBox(0, 0, 4, 5)  # TODO: Remove this magic numbers
+            # Creates an interactive box
+            hitbox = self.world.component_for_entity(self.player_entity, cmp.HitBox)
+            interactive_hitbox = cmp.HitBox(0, 0, 4, 5)  # TODO: Remove these magic numbers and put it in configuration !!!
             if self.direction == EntityDirection.UP:
-                hitbox.bottom = player_hitbox.top
-                hitbox.centerx = player_hitbox.centerx
+                interactive_hitbox.bottom = hitbox.top
+                interactive_hitbox.centerx = hitbox.centerx
             elif self.direction == EntityDirection.LEFT:
-                hitbox.right = player_hitbox.left
-                hitbox.centery = player_hitbox.centery
+                interactive_hitbox.right = hitbox.left
+                interactive_hitbox.centery = hitbox.centery
             elif self.direction == EntityDirection.RIGHT:
-                hitbox.left = player_hitbox.right
-                hitbox.centery = player_hitbox.centery
+                interactive_hitbox.left = hitbox.right
+                interactive_hitbox.centery = hitbox.centery
             elif self.direction == EntityDirection.DOWN:
-                hitbox.top = player_hitbox.bottom
-                hitbox.centerx = player_hitbox.centerx
-            self.world.add_component(self.interaction_box_entity, hitbox)
+                interactive_hitbox.top = hitbox.bottom
+                interactive_hitbox.centerx = hitbox.centerx
+            self.world.add_component(self.interaction_box_entity, interactive_hitbox)
+
+        # If directional button is pressed then snap the opposite axis to grid
+        position = self.world.component_for_entity(self.player_entity, cmp.Position)
+        if button_event.button in (Button.LEFT, Button.RIGHT):
+            position.y = round(position.y)
+        elif button_event.button in (Button.UP, Button.DOWN):
+            position.x = round(position.x)
 
     def on_button_released(self, button_event: ButtonReleasedEvent):
+        """ Snap to the integer grid """
         position = self.world.component_for_entity(self.player_entity, cmp.Position)
-        if button_event.button == Button.LEFT or button_event.button == button_event.button.RIGHT:
+        if button_event.button in (Button.LEFT, Button.RIGHT):
             position.x = round(position.x)
             self.directional_key_released = True
-        elif button_event.button == Button.UP or button_event.button == button_event.button.DOWN:
+        elif button_event.button in (Button.UP, Button.DOWN):
             position.y = round(position.y)
             self.directional_key_released = True
 

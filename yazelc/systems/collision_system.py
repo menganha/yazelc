@@ -1,6 +1,7 @@
+import math
+
 from yazelc import zesper
 from yazelc.components import Position, HitBox
-
 from yazelc.event.events import eventclass
 
 
@@ -67,7 +68,7 @@ class CollisionSystem(zesper.Processor):
 
     def process(self):
 
-        # Checks between solid and non-solid boxes
+        # Checks between solid and non-solid boxes collisions
         solids = [(ent, hb) for ent, hb in self.world.get_component(HitBox) if hb.solid]
         non_solid = [(ent, hb) for ent, hb in self.world.get_component(HitBox) if not hb.solid]
 
@@ -82,11 +83,13 @@ class CollisionSystem(zesper.Processor):
         for hb_s, hb, ent, _ in sorted(collided_with_solid, key=lambda x: x[-1], reverse=True):
             self.collision_resolution(hb_s, hb, ent)
 
+        # Check for exiting the collision
         collided_with_solid_set = {ent for _, _, ent, _ in collided_with_solid}
         for ent in self.prev_collided_with_solid_entities - collided_with_solid_set:
             self.event_queue.add(SolidExitCollisionEvent(ent))
         self.prev_collided_with_solid_entities = collided_with_solid_set
 
+        # Checks non-solid vs non-solid collisions
         for ent_s, hb_s in solids:
             for ent, hb in non_solid:
                 if hb_s.colliderect(hb):
@@ -111,13 +114,10 @@ class CollisionSystem(zesper.Processor):
         """
         Resolve collision by checking which axis overlaps less. It pushes the hitbox back on that direction.
 
-        If the collision can be equally resolved on both axes, it resolves by taking precedence on the Y axis,
-        i.e., vertically. However, if a position exists for the input entity, then it uses the direction of movement to
-        select the opposite axis for the resolution, e.g., if moving vertically up, it will try to resolve on the
-        horizontal axis.
+        If the collision can be equally resolved on both axes, it resolves by taking precedence on the Y axis, i.e., vertically.
+        If a position exists for the input entity, then it uses the direction of movement (except if its diagonal) to select the
+        opposite axis for the resolution, e.g., if moving vertically up, it will try to resolve on the horizontal axis.
         """
-
-        position = self.world.try_component(ent, Position)
 
         side_differences = {
             'l': abs(hitbox.left - hitbox_solid.right),
@@ -126,37 +126,56 @@ class CollisionSystem(zesper.Processor):
             'b': abs(hitbox.bottom - hitbox_solid.top),
         }
         minimum_overlap = min(side_differences.values())
-        minimum_sides = [side for side in side_differences if side_differences[side] <= minimum_overlap]
-        if len(minimum_sides) > 1:
+        if minimum_overlap == 0:  # Exit early. The collision has been resolved on a previous call
+            return
+
+        minimum_sides = sorted(side_differences.keys(), key=lambda x_: side_differences[x_])
+        side1, side2 = minimum_sides[:2]
+
+        # If moving on both directions, then do not perform the second side resolution
+        position = self.world.try_component(ent, Position)
+        if position:
             adv_x = abs(position.prev_x - position.x)
             adv_y = abs(position.prev_y - position.y)
-            if position and (adv_x < adv_y):
-                weight = ('l', 'r')
-            else:
-                weight = ('t', 'b')
-            side = sorted(minimum_sides, key=lambda x_: 0 if x_ in weight else 1)[0]
-        else:
-            side = minimum_sides[0]
+            if math.isclose(adv_x, adv_y):
+                side2 = None
 
         x, y = None, None
-        if side == 'l':
-            hitbox.left = hitbox_solid.right
-            x = hitbox.x
-        elif side == 'r':
-            hitbox.right = hitbox_solid.left
-            x = hitbox.x
-        elif side == 't':
-            hitbox.top = hitbox_solid.bottom
-            y = hitbox.y
-        else:
-            hitbox.bottom = hitbox_solid.top
-            y = hitbox.y
+        match side1:
+            case 'l':
+                hitbox.left = hitbox_solid.right
+                x = hitbox.x
+            case 'r':
+                hitbox.right = hitbox_solid.left
+                x = hitbox.x
+            case 't':
+                hitbox.top = hitbox_solid.bottom
+                y = hitbox.y
+            case 'b':
+                hitbox.bottom = hitbox_solid.top
+                y = hitbox.y
+
+        # If the second axis of collision is less than the "skin_depth" then slide the hitbox out of this position
+        if side2 is not None and side_differences[side2] <= hitbox.skin_depth:
+            match side2:
+                case 'l':
+                    hitbox.left += 1
+                    x = hitbox.x
+                case 'r':
+                    hitbox.right -= 1
+                    x = hitbox.x
+                case 't':
+                    hitbox.top += 1
+                    y = hitbox.y
+                case 'b':
+                    hitbox.bottom -= 1
+                    y = hitbox.y
 
         if position:
             if x is not None:
                 position.x = x - hitbox.offset.x  # Double statement is a trick to reset the prev_x attribute
                 position.x = x - hitbox.offset.x
-            else:
+            if y is not None:
                 position.y = y - hitbox.offset.y
                 position.y = y - hitbox.offset.y
 
@@ -165,24 +184,3 @@ class CollisionSystem(zesper.Processor):
         clipped = rect_1.clip(rect_2)
         area = abs(clipped.height * clipped.width)
         return area
-
-    def on_collision(self, collision_event: EnterCollisionEvent):
-        # TODO: Move this to each system independently!!!!!! We are coupling too much stuff here!!!!
-        # Handles collision when interacting with entities with the Dialog component
-        # if components := self.world.try_pair_signature(collision_event.ent_1, collision_event.ent_2, InteractorTag, Sign ):
-        #     _, _, dialog_entity_id, _ = components
-        #     dialog_trigger_event = DialogTriggerEvent(dialog_entity_id)
-        #     self.event_queue.add(dialog_trigger_event)
-        # elif component := self.world.try_signature(collision_event.ent_1, collision_event.ent_2, Collectable):
-        #     collectable_ent_id, collectable, collector_ent_id = component
-        #     collection_event = CollectionEvent(collectable_ent_id, collectable, collector_ent_id)
-        #     self.event_queue.add(collection_event)
-        # elif components := self.world.try_pair_signature(collision_event.ent_1, collision_event.ent_2, Health, Weapon):
-        #     victim_id, _, attacker_id, _ = components
-        #     damage_event = DamageEvent(victim_id, attacker_id)
-        #     self.event_queue.add(damage_event)
-        # elif component := self.world.try_signature(collision_event.ent_1, collision_event.ent_2, Door):
-        #     door_entity_id, _, transversing_entity_id = component
-        #     hit_door_event = HitDoorEvent(door_entity_id, transversing_entity_id)
-        #     self.event_queue.add(hit_door_event)
-        pass
